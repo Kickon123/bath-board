@@ -11,21 +11,20 @@
     height: 100vh;
     overflow: hidden;
     display: flex;
-    align-items: center; /* 上下中央に配置 */
+    align-items: center;
   }
 
-  /* 画像アスペクト比 1514:781 に合わせた高さ（左半分=50vwの高さ）*/
   #container {
     display: flex;
     width: 100vw;
-    height: calc(50vw * 781 / 1514);
-    max-height: 100vh;
+    height: 100vh;
+    align-items: flex-end;
   }
 
-  /* 左: 温度表示（固定） */
+  /* 左: 温度表示 */
   #left {
-    width: 50%;
-    height: 100%;
+    width: 70%;
+    height: 90vh;
     flex-shrink: 0;
   }
   #left iframe {
@@ -34,53 +33,66 @@
     border: none;
   }
 
-  /* 右: 縦回転スライドショー */
+  /* 右: 3Dカルーセル */
   #right {
-    width: 50%;
-    height: 100%;
+    width: 30%;
+    height: 90vh;
     position: relative;
-    overflow: hidden;
-    perspective: 1200px;
+    overflow: visible;
+    background: #0a0a0a;
+    perspective: 500px;
+    perspective-origin: 50% 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .slide {
     position: absolute;
-    inset: 0;
-    opacity: 0;
-    pointer-events: none;
+    width: 92%;
+    height: 58%;
+    border-radius: 40px;  /* 上下に丸み */
+    overflow: hidden;
+    transition: transform 0.85s cubic-bezier(.4,0,.2,1),
+                opacity   0.85s cubic-bezier(.4,0,.2,1),
+                box-shadow 0.85s ease;
     backface-visibility: hidden;
-  }
-  .slide.active {
-    opacity: 1;
-    pointer-events: auto;
   }
   .slide img {
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    background: #0a0a0a;
   }
 
-  @keyframes exitRotate {
-    0%   { opacity: 1; transform: rotateX(0deg)    scale(1);   }
-    100% { opacity: 0; transform: rotateX(-120deg) scale(0.6); }
+  /* 前面（アクティブ） */
+  .slide[data-pos="0"] {
+    transform: scale(1);
+    opacity: 1;
+    z-index: 3;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.9),
+                0 0 0 1px rgba(255,255,255,0.15);
   }
-  @keyframes enterRotate {
-    0%   { opacity: 0; transform: rotateX(120deg) scale(0.6); }
-    100% { opacity: 1; transform: rotateX(0deg)   scale(1);   }
+  /* 上奥（縦回転） */
+  .slide[data-pos="1"] {
+    transform: translateY(-40%) rotateX(-48deg) translateZ(-60px) scale(0.75);
+    opacity: 0.5;
+    z-index: 2;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.7);
   }
-
-  .slide.exiting {
-    animation: exitRotate 0.65s cubic-bezier(.4,0,.2,1) forwards;
-  }
-  .slide.entering {
-    animation: enterRotate 0.65s cubic-bezier(.4,0,.2,1) forwards;
+  /* 下奥（縦回転） */
+  .slide[data-pos="2"] {
+    transform: translateY(40%) rotateX(48deg) translateZ(-60px) scale(0.75);
+    opacity: 0.5;
+    z-index: 1;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.7);
   }
 
   #bar {
     position: absolute;
     bottom: 0; left: 0;
     height: 4px;
-    background: rgba(255,255,255,0.75);
+    background: rgba(255,255,255,0.7);
     width: 0%;
     z-index: 99;
   }
@@ -95,14 +107,15 @@
     z-index: 99;
   }
   .dot {
-    width: 8px; height: 8px;
+    width: 7px; height: 7px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.35);
-    transition: background 0.3s;
+    background: rgba(255,255,255,0.3);
+    transition: background 0.3s, transform 0.3s;
   }
   .dot.on {
     background: rgba(255,255,255,0.9);
-    box-shadow: 0 0 6px rgba(255,255,255,0.8);
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(255,255,255,0.7);
   }
 </style>
 </head>
@@ -115,16 +128,16 @@
     <iframe src="/base7"></iframe>
   </div>
 
-  <!-- 右: 縦回転スライドショー -->
+  <!-- 右: 3Dカルーセル -->
   <div id="right">
-    <div class="slide active" id="s0">
-      <img src="/static/base7.png" alt="湯畑マップ">
+    <div class="slide" data-pos="0">
+      <img src="/static/ChatGPT Image May 15, 2026, 08_26_50 PM.png" alt="静止画1">
     </div>
-    <div class="slide" id="s1">
-      <img src="/static/bg.png" alt="背景1">
+    <div class="slide" data-pos="1">
+      <img src="/static/ChatGPT Image May 23, 2026, 11_16_35 PM.png" alt="静止画2">
     </div>
-    <div class="slide" id="s2">
-      <img src="/static/bg.png" alt="背景2">
+    <div class="slide" data-pos="2">
+      <img src="/static/ChatGPT Image May 23, 2026, 11_26_28 PM.png" alt="静止画3">
     </div>
 
     <div id="bar"></div>
@@ -139,28 +152,24 @@
 
 <script>
 const DURATION = 10;
-const ANIM_MS  = 650;
-
 const slides = document.querySelectorAll('#right .slide');
 const dots   = document.querySelectorAll('#dots .dot');
 const bar    = document.getElementById('bar');
-let current  = 0;
+let front = 0;
 let startTime, raf, timer;
 
-function showNext() {
-  const prev = current;
-  current = (current + 1) % slides.length;
+function applyPositions() {
+  slides.forEach((slide, i) => {
+    slide.dataset.pos = (i - front + slides.length) % slides.length;
+  });
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('on', i === front);
+  });
+}
 
-  slides[prev].classList.remove('active');
-  slides[prev].classList.add('exiting');
-  setTimeout(() => slides[prev].classList.remove('exiting'), ANIM_MS);
-
-  slides[current].classList.add('entering', 'active');
-  setTimeout(() => slides[current].classList.remove('entering'), ANIM_MS);
-
-  dots[prev].classList.remove('on');
-  dots[current].classList.add('on');
-
+function advance() {
+  front = (front + 1) % slides.length;
+  applyPositions();
   startProgress();
 }
 
@@ -169,16 +178,16 @@ function startProgress() {
   cancelAnimationFrame(raf);
   startTime = Date.now();
   const dur = DURATION * 1000;
-
   function tick() {
     const pct = Math.min((Date.now() - startTime) / dur * 100, 100);
     bar.style.width = pct + '%';
     if (pct < 100) raf = requestAnimationFrame(tick);
   }
   tick();
-  timer = setTimeout(showNext, dur);
+  timer = setTimeout(advance, dur);
 }
 
+applyPositions();
 startProgress();
 </script>
 </body>
