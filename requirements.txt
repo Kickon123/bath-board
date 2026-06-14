@@ -1,0 +1,6 @@
+flask>=3.0.0
+requests>=2.31.0
+flask-cors>=4.0.0
+PyMuPDF>=1.23.0       # server.py: PDF→背景画像(bg.png)変換に使用 (import fitz)
+opencv-python>=4.8.0  # convert_photo.py: 写真アップロード変換に使用 (import cv2)
+numpy>=1.24.0         # convert_photo.py: 画像処理

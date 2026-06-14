@@ -1,0 +1,54 @@
+﻿
+[subDevice] POST /api/subDevice/get
+  Status: 404 / 96b
+
+[childDevice] POST /api/childDevice/list
+  Status: 404 / 99b
+
+[inkBird/subDevice] POST /api/inkBird/subDevice
+  Status: 404 / 100b
+
+[inkBird/subDevice/v2] POST /api/inkBird/subDevice/v2
+  Status: 404 / 103b
+
+[inkBird/getSubDevice] POST /api/inkBird/getSubDevice
+  Status: 404 / 103b
+
+[device/sub/list] POST /api/device/sub/list
+  Status: 404 / 98b
+
+[smartAgent/subDevice] POST /api/smartAgent/subDevice
+  Status: 404 / 103b
+
+[smartAgent/getSubDevice] POST /api/smartAgent/getSubDevice
+  Status: 404 / 106b
+
+[smartAgent/device/sub] POST /api/smartAgent/device/sub
+  Status: 404 / 104b
+
+[smartAgent/device/children] POST /api/smartAgent/device/children
+  Status: 404 / 109b
+
+[inkBird/allDevice] POST /api/inkBird/allDevice
+  Status: 200 / 35574b
+  {"code": 200, "message": "success", "data": {"deviceCategoryList": [{"id": 1, "zh": "所有设备", "en": "All Devices", "de": "alle Geräte", "es": "Todos los dispositivos", "fr": "Tous les dispositifs", "it": "Tutti I dispositivi", "ja": "すべてのデバイス", "ru": "Все устройства", "cs": "All Devices", "ko": "All Devices", "nl": "All Devices", "pl": "All Devices", "pt": "All Devices", "th": "All Devices", "tl": "All Devices", "tr": "All Devices", "ar": "جميع الأجهزة", "categoryDid": 0, "sortId": 0.0}, {"id": 2,
+
+[inkBird/device/get] POST /api/inkBird/device/get
+  Status: 404 / 101b
+
+[inkBird/device/list] POST /api/inkBird/device/list
+  Status: 404 / 102b
+
+[inkBird/home/device] POST /api/inkBird/home/device
+  Status: 404 / 102b
+
+[subDevice_GET] GET /api/subDevice/get?gatewayId=eba5d6d312122cba07raz1
+  Status: 404 / 96b
+
+[inkBird/home_GET] GET /api/inkBird/home?homeId=261445727
+  Status: 404 / 95b
+
+[home/devices_GET] GET /api/home/devices?homeId=261445727
+  Status: 404 / 95b
+
+

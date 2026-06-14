@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+bath_system.log*
+latest.json
+temperatures.json
