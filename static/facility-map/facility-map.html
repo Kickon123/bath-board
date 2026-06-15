@@ -28,7 +28,7 @@ body {
   color: var(--ink);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 /* 和柄の淡い背景 */
@@ -125,8 +125,7 @@ body::before {
 }
 
 .floor-block {
-  width: 100%;
-  max-width: 680px;
+  width: 680px;   /* 画面幅に関わらず固定サイズ */
 }
 
 .floor-row {
@@ -545,11 +544,7 @@ body::before {
 }
 .explore-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(176,141,87,0.5); }
 
-@media (max-width: 560px) {
-  .floor-tag { width: 50px; min-width: 50px; padding-right: 10px; }
-  .floor-tag .n { font-size: 1.4rem; }
-  .detail { margin-left: 50px; }
-}
+/* 画面サイズに関わらず同じ大きさで表示するため、縮小用メディアクエリは無効化 */
 </style>
 </head>
 <body>
