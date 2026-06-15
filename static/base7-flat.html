@@ -10,13 +10,14 @@
     height:100vh;display:flex;flex-direction:column;}
   #topbar{display:flex;align-items:center;justify-content:space-between;
     padding:8px 16px;background:rgba(10,18,8,.8);flex-shrink:0;}
-  #topbar h1{color:#f0e6cf;font-size:.95rem;letter-spacing:.1em;}
-  #topbar h1 small{display:block;font-size:.65rem;color:#b8a884;}
-  #info{display:flex;gap:12px;align-items:center;font-size:.8rem;}
+  #topbar h1{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
+  #topbar h1 small{display:block;font-size:1.2vw;color:#b8a884;}
+  #info{display:flex;gap:12px;align-items:center;font-size:1.75vw;}
   #info .t{color:#ff9a5a;font-weight:bold;}
   #info .h{color:#7ab8e0;}
-  #info .upd{color:#9aaa8a;font-size:.68rem;}
-  #conn{font-size:.72rem;font-weight:bold;padding:2px 9px;border-radius:10px;}
+  #info .upd{color:#9aaa8a;font-size:1.8vw;}
+  #info span:first-child{color:#f0e6cf;font-weight:bold;}
+  #conn{font-size:1.25vw;font-weight:bold;padding:2px 9px;border-radius:10px;}
   #conn.ok{color:#8fe39a;background:rgba(40,120,60,.35);}
   #conn.warn{color:#ffd24a;background:rgba(150,110,20,.45);}
   #conn.ng{color:#ff8f7a;background:rgba(150,40,30,.5);
@@ -30,26 +31,36 @@
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
-  .pin .nm{font-size:.72rem;color:#fff;font-weight:bold;}
-  .pin .tp{font-size:1.4rem;font-weight:800;color:#fff;}
-  .pin.sm .nm{font-size:.62rem;}
-  .pin.sm .tp{font-size:1.05rem;}
+  .pin .nm{font-size:1.4vw;color:#fff;font-weight:bold;}
+  .pin .tp{font-size:2.2vw;font-weight:800;color:#FFD700;}
+  .pin.sm .nm{font-size:1.3vw;}
+  .pin.sm .tp{font-size:1.8vw;color:#FFD700;}
+  .line{position:absolute;transform:translateX(-50%);width:4px;
+    background:rgba(255,255,255,0.55);pointer-events:none;}
   .pin.stale{border-style:dashed;opacity:.9;}
-  .pin .old{font-size:.62rem;color:#ffd24a;font-weight:bold;display:block;}
+  .pin .old{font-size:.55vw;color:#ffd24a;font-weight:bold;display:block;}
   .dot{position:absolute;transform:translate(-50%,-50%);
     width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
   #right-panel{position:absolute;right:20px;top:50%;transform:translateY(-50%);
     display:flex;flex-direction:column;gap:14px;align-items:flex-end;}
-  #yugata{color:#f0e6cf;font-size:2.5rem;font-weight:bold;letter-spacing:.3em;
-    text-shadow:0 0 28px rgba(255,165,50,.8),0 0 8px rgba(255,140,0,.5),0 2px 12px rgba(0,0,0,.95);
-    pointer-events:none;}
+  #yugata{font-size:3.5vw;font-weight:900;letter-spacing:.35em;
+    background:linear-gradient(180deg,#fff9e6 0%,#FFD700 45%,#FF6B00 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));
+    animation:yugata-pulse 3s ease-in-out infinite;pointer-events:none;}
+  @keyframes yugata-pulse{
+    0%,100%{filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));}
+    50%{filter:drop-shadow(0 0 28px rgba(255,210,0,1)) drop-shadow(0 0 60px rgba(255,130,0,.8));}
+  }
   #legend{background:rgba(10,18,8,.6);color:#dfd5b8;padding:9px 14px;
-    border-radius:9px;font-size:.95rem;}
+    border-radius:9px;font-size:1.0vw;}
   #legend .r{display:flex;gap:8px;align-items:center;margin:3px 0;}
   #legend .d{width:14px;height:14px;border-radius:4px;}
-  #clock{background:rgba(10,18,8,.75);color:#f0e6cf;padding:6px 14px;
-    border-radius:9px;font-size:1.5rem;font-weight:bold;letter-spacing:.06em;
-    font-variant-numeric:tabular-nums;}
+  #clock{background:rgba(10,18,8,.75);color:#f0e6cf;padding:8px 16px;
+    border-radius:9px;font-weight:bold;letter-spacing:.06em;
+    font-variant-numeric:tabular-nums;text-align:right;}
+  #clock .date{font-size:2.0vw;display:block;color:#b8a884;margin-bottom:2px;}
+  #clock .time{font-size:3.2vw;display:block;}
 </style>
 </head>
 <body>
@@ -58,7 +69,6 @@
   <div id="info">
     <span>📍石川県加賀市</span>
     <span class="t" id="at">--.-℃</span>
-    <span class="h" id="ah"></span>
     <span class="upd" id="upd"></span>
     <span id="conn" class="ok">🟢 接続中</span>
   </div>
@@ -81,9 +91,9 @@
 <script>
 // base7.png (1514x781) 上の各湯舟の位置 (u:左0→右1, v:上0→下1)
 const SPOTS = [
-  { id:1, name:"高めの湯",  u:0.16, v:0.57, sm:true },
-  { id:2, name:"ぬるめの湯",u:0.25, v:0.55, sm:true },
-  { id:3, name:"低めの湯",  u:0.35, v:0.49, sm:true },
+  { id:1, name:"高めの湯",  u:0.16, v:0.57 },
+  { id:2, name:"ぬるめの湯",u:0.25, v:0.55 },
+  { id:3, name:"低めの湯",  u:0.35, v:0.49 },
   { id:6, name:"立湯",      u:0.51, v:0.48 },
   { id:5, name:"座湯",      u:0.49, v:0.75 },
 ];
@@ -115,8 +125,7 @@ function render(){
   const pinsEl=document.getElementById('pins');
   const iw=img.naturalWidth||1514, ih=img.naturalHeight||781;
   const bw=wrap.clientWidth, bh=wrap.clientHeight;
-  const fitContain=new URLSearchParams(location.search).get('fit')==='contain';
-  const scale=fitContain?Math.min(bw/iw,bh/ih):Math.max(bw/iw,bh/ih);
+  const scale=Math.max(bw/iw, bh/ih);
   const dw=iw*scale, dh=ih*scale;
   const ox=(bw-dw)/2, oy=(bh-dh)/2;
 
@@ -128,7 +137,8 @@ function render(){
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
-    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-8}px;--lc:${lc}">
+    html+=`<div class="line" style="left:${px}px;top:${py-70}px;height:70px;background:${lc};opacity:.7"></div>`;
+    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc}">
       <div class="nm">${s.name}</div>
       <div class="tp">${label}</div>
       ${isStale?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
@@ -149,7 +159,7 @@ async function load(){
   try{
     const res=await fetch('/api/baths');
     const data=await res.json();
-    const online=data.online!==false;
+    const online = data.online !== false;
     if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
     tempMap={}; staleMap={}; atMap={};
@@ -158,12 +168,12 @@ async function load(){
     const amb=data.gateway;
     if(amb&&amb.temp!=null){
       document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
-      document.getElementById('ah').textContent=amb.humidity!=null?'💧'+Number(amb.humidity).toFixed(1)+'%':'';
     }
     setConn(isOnline, anyStale);
     if(data.last_updated){
       const d=new Date(data.last_updated),p=n=>String(n).padStart(2,'0');
-      document.getElementById('upd').textContent=`${isOnline?'最終更新':'最終取得'} ${p(d.getHours())}:${p(d.getMinutes())}`;
+      const label=online?'最終更新':'最終取得';
+      document.getElementById('upd').textContent=`${label} ${p(d.getHours())}:${p(d.getMinutes())}`;
     }
     render();
   }catch(e){
@@ -171,17 +181,18 @@ async function load(){
   }
 }
 
-if(new URLSearchParams(location.search).get('fit')==='contain')
-  document.getElementById('photo').style.objectFit='contain';
 document.getElementById('photo').onload=render;
 window.addEventListener('resize',render);
 render();
 load();
-setInterval(load,5000);
+setInterval(load,60000);
 
 function updateClock(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');
-  document.getElementById('clock').textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  const days=['日','月','火','水','木','金','土'];
+  const date=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}（${days[d.getDay()]}）`;
+  const time=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  document.getElementById('clock').innerHTML=`<span class="date">${date}</span><span class="time">${time}</span>`;
 }
 updateClock();
 setInterval(updateClock,1000);
