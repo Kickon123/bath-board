@@ -267,27 +267,39 @@ def find_device_coords(cfg: dict, device_name: str) -> tuple[int, int] | None:
     return None
 
 
-def refresh_device_view(cfg: dict, device_name: str | None = None):
-    """
-    Inkbirdアプリをクリーン起動（強制終了→起動）してホーム一覧から始め、
-    指定デバイス名をテキスト検索でタップしてデバイス画面を開く。
-    device_name が None の場合は config の ui.device_name を使う。
-    2台目以降は force-stop せず、バックキーでホームに戻ってからタップする。
-    """
-    ui        = cfg["adb"].get("ui", {})
-    wait      = cfg["adb"].get("page_refresh_wait", 4)
-    app_wait  = cfg["adb"].get("app_launch_wait", 9)
-    target    = device_name or ui.get("device_name", "湯畑")
-    pkg       = cfg["adb"].get("inkbird_package", "com.inkbird.inkbirdapp")
-
-    # ① クリーン起動：強制終了 → ランチャーから起動（必ずホーム一覧に出る）
+def _force_start(cfg: dict, pkg: str, app_wait: int):
+    """force-stop → ランチャー起動（フォールバック用）"""
     adb(cfg, "shell", "am", "force-stop", pkg)
     time.sleep(2)
     adb(cfg, "shell", "monkey", "-p", pkg, "-c",
         "android.intent.category.LAUNCHER", "1")
     time.sleep(app_wait)
 
-    # ② デバイス名がホーム一覧に安定して現れるまでリトライしてタップ
+
+def refresh_device_view(cfg: dict, device_name: str | None = None):
+    """
+    Inkbirdのホーム一覧から指定デバイスをタップしてデバイス画面を開く。
+
+    まずバックキーでホーム一覧への遷移を試みる。
+    デバイス名が見つからなければ force-stop → 再起動にフォールバック。
+    """
+    ui       = cfg["adb"].get("ui", {})
+    wait     = cfg["adb"].get("page_refresh_wait", 4)
+    app_wait = cfg["adb"].get("app_launch_wait", 9)
+    target   = device_name or ui.get("device_name", "湯畑")
+    pkg      = cfg["adb"].get("inkbird_package", "com.inkbird.inkbirdapp")
+
+    # ① バックキーでホーム一覧へ戻ることを試みる
+    log.info(f"  [バック遷移] バックキーでホームへ戻る試み")
+    adb(cfg, "shell", "input", "keyevent", "4")
+    time.sleep(2)
+    coords = find_device_coords(cfg, target)
+    if coords is None:
+        # ホーム一覧に戻れていない → force-stop にフォールバック
+        log.info(f"  [フォールバック] 「{target}」が見つからず → force-stop → 再起動")
+        _force_start(cfg, pkg, app_wait)
+
+    # ② デバイス名がホーム一覧に現れるまでリトライしてタップ
     log.info(f"  「{target}」を検索中...")
     coords = None
     for attempt in range(6):
@@ -305,7 +317,6 @@ def refresh_device_view(cfg: dict, device_name: str | None = None):
         log.info(f"  「{target}」が見つからず、デフォルト座標を使用: ({device_x},{device_y})")
         adb(cfg, "shell", "input", "tap", str(device_x), str(device_y))
 
-    # ③ デバイス画面のロード待ち
     log.info(f"  データ読み込み待ち {wait}秒...")
     time.sleep(wait)
 
@@ -328,7 +339,6 @@ def find_sensor_tabs(root: ET.Element) -> list[tuple[int, int]]:
 def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     """
     1つのInkbirdデバイスのセンサーを全タブ巡回して収集する。
-    デバイス画面上部の番号タブを1つずつタップ。
     戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
     """
     refresh_device_view(cfg, device_name)
