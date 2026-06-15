@@ -41,6 +41,8 @@
   .pin .tp{font-size:1.4vw;font-weight:800;color:#FFD700;}
   .pin.sm .nm{font-size:0.85vw;}
   .pin.sm .tp{font-size:1.15vw;color:#FFD700;}
+  .pin.lg .nm{font-size:1.05vw;}
+  .pin.lg .tp{font-size:1.75vw;color:#FFD700;}
   .line{position:absolute;transform:translateX(-50%);width:3px;
     background:rgba(255,255,255,0.55);pointer-events:none;}
   .pin.stale{border-style:dashed;opacity:.9;}
@@ -192,8 +194,8 @@ const SPOTS = [
   { id:1, name:"高めの湯",  u:0.16, v:0.57 },
   { id:2, name:"ぬるめの湯",u:0.25, v:0.55 },
   { id:3, name:"低めの湯",  u:0.35, v:0.49 },
-  { id:6, name:"立湯",      u:0.51, v:0.48 },
-  { id:5, name:"座湯",      u:0.49, v:0.75 },
+  { id:6, name:"立湯",      u:0.51, v:0.48, lg:true },
+  { id:5, name:"座湯",      u:0.49, v:0.75, lg:true },
 ];
 
 // ── 大浴場スポット定義 ──
@@ -256,7 +258,7 @@ function render(){
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
     html+=`<div class="line" style="left:${px}px;top:${py-70}px;height:70px;background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc}">
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc}">
       <div class="nm">${s.name}</div>
       <div class="tp">${label}</div>
       ${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
