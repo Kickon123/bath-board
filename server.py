@@ -56,6 +56,18 @@ def base7():
 def base_all():
     return send_from_directory("static", "base-all.html")
 
+@app.route("/bath/yubatake")
+def bath_yubatake():
+    return send_from_directory("static", "base7-flat.html")
+
+@app.route("/bath/daiyokujo")
+def bath_daiyokujo():
+    return send_from_directory("static", "daiyokujo.html")
+
+@app.route("/bath/all")
+def bath_all():
+    return send_from_directory("static", "base-all.html")
+
 @app.route("/api/baths")
 def api_baths():
     cfg   = load_config()

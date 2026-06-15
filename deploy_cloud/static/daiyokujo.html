@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>大浴場 温度表示</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#080f06;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
+    height:100vh;display:flex;flex-direction:column;}
+  #topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:8px 16px;background:rgba(10,18,8,.85);flex-shrink:0;
+    border-bottom:1px solid rgba(255,200,100,.15);}
+  #topbar h1{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
+  #topbar h1 small{display:block;font-size:1.2vw;color:#b8a884;}
+  #info{display:flex;gap:10px;align-items:center;font-size:1.0vw;}
+  #info .t{color:#ff9a5a;font-weight:bold;}
+  #info .upd{color:#9aaa8a;}
+  #info span:first-child{color:#f0e6cf;font-weight:bold;}
+  .connbadge{font-size:0.9vw;font-weight:bold;padding:2px 8px;border-radius:10px;}
+  .connbadge.ok{color:#8fe39a;background:rgba(40,120,60,.35);}
+  .connbadge.warn{color:#ffd24a;background:rgba(150,110,20,.45);}
+  .connbadge.ng{color:#ff8f7a;background:rgba(150,40,30,.5);
+    animation:blink 1.4s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+
+  #main{flex:1;display:flex;flex-direction:column;gap:16px;padding:20px 24px;overflow:hidden;}
+  .bath-card{
+    flex:1;
+    background:rgba(18,30,12,.95);
+    border:2px solid rgba(255,255,255,.15);
+    border-radius:20px;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:10px;position:relative;overflow:hidden;
+  }
+  .bath-card::before{
+    content:"";position:absolute;inset:0;
+    background:var(--bc, rgba(255,180,0,.04));pointer-events:none;
+  }
+  .bath-card.stale{border-style:dashed;opacity:.85;}
+  .bath-card .card-label{font-size:2.0vw;color:#b8a884;font-weight:bold;letter-spacing:.15em;}
+  .bath-card .card-name{font-size:3.2vw;color:#f0e6cf;font-weight:900;letter-spacing:.1em;}
+  .bath-card .card-temp{font-size:7vw;font-weight:800;color:#FFD700;line-height:1;letter-spacing:.04em;}
+  .bath-card .card-upd{font-size:1.1vw;color:#ffd24a;}
+
+  #footer{display:flex;align-items:center;justify-content:flex-end;
+    padding:8px 16px;background:rgba(10,18,8,.8);flex-shrink:0;
+    border-top:1px solid rgba(255,200,100,.1);}
+  #clock{color:#f0e6cf;font-weight:bold;letter-spacing:.06em;
+    font-variant-numeric:tabular-nums;text-align:right;}
+  #clock .date{font-size:1.6vw;display:block;color:#b8a884;margin-bottom:2px;}
+  #clock .time{font-size:2.6vw;display:block;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>♨ 大浴場 温度表示<small>山中温泉 花つばき</small></h1>
+  <div id="info">
+    <span>📍石川県加賀市</span>
+    <span class="t" id="at">--.-℃</span>
+    <span class="upd" id="upd"></span>
+    <span id="conn" class="connbadge ok">🟢 接続中</span>
+  </div>
+</div>
+
+<div id="main">
+  <div class="bath-card" id="card-20">
+    <div class="card-label">男湯</div>
+    <div class="card-name">大浴場</div>
+    <div class="card-temp" id="temp-20">--.-℃</div>
+    <div class="card-upd" id="upd-20"></div>
+  </div>
+  <div class="bath-card" id="card-21">
+    <div class="card-label">女湯</div>
+    <div class="card-name">大浴場</div>
+    <div class="card-temp" id="temp-21">--.-℃</div>
+    <div class="card-upd" id="upd-21"></div>
+  </div>
+</div>
+
+<div id="footer">
+  <div id="clock">--:--:--</div>
+</div>
+
+<script>
+const DAIYU_IDS=[20,21];
+
+function fmtAt(iso){
+  if(!iso) return '';
+  const d=new Date(iso), p=n=>String(n).padStart(2,'0');
+  const now=new Date();
+  const sameDay=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  return sameDay?`最終 ${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function tempColorDaiyu(t){
+  if(t==null) return null;
+  if(t>=42) return 'rgba(155,17,17,.12)';
+  if(t>=38) return 'rgba(214,64,52,.10)';
+  if(t>=34) return 'rgba(224,122,95,.10)';
+  return 'rgba(58,144,216,.10)';
+}
+function tempTextColor(t){
+  if(t==null) return '#FFD700';
+  if(t>=42) return '#ff6b6b';
+  if(t>=38) return '#FFD700';
+  if(t>=34) return '#ffa07a';
+  return '#7ab8e0';
+}
+
+let tempMap={}, staleMap={}, atMap={}, isOnline=true;
+
+function renderDaiyu(){
+  for(const id of DAIYU_IDS){
+    const t=tempMap[id];
+    const card=document.getElementById(`card-${id}`);
+    const tempEl=document.getElementById(`temp-${id}`);
+    const updEl=document.getElementById(`upd-${id}`);
+    if(!card||!tempEl) continue;
+    tempEl.textContent=t!=null?`${Number(t).toFixed(1)}℃`:'--.-℃';
+    tempEl.style.color=tempTextColor(t);
+    card.style.setProperty('--bc', tempColorDaiyu(t)||'rgba(255,180,0,.04)');
+    const isStale=!isOnline||staleMap[id];
+    card.classList.toggle('stale', isStale);
+    if(updEl) updEl.textContent=isStale&&atMap[id]?`⚠ ${fmtAt(atMap[id])}`:'';
+  }
+}
+
+function setConn(online, anyStale){
+  const el=document.getElementById('conn');
+  if(!online){ el.className='connbadge ng'; el.textContent='🔴 未接続（表示は最終値）'; }
+  else if(anyStale){ el.className='connbadge warn'; el.textContent='🟡 一部未取得'; }
+  else{ el.className='connbadge ok'; el.textContent='🟢 接続中'; }
+}
+
+let lastUpdated=null, lastOnline=null, lastAttempt=null;
+async function load(){
+  try{
+    const res=await fetch('/api/baths');
+    const data=await res.json();
+    const online=data.online!==false;
+    if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
+    lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
+    tempMap={}; staleMap={}; atMap={};
+    for(const b of data.baths){
+      if(DAIYU_IDS.includes(b.id)){
+        tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at;
+      }
+    }
+    const anyStale=data.baths.filter(b=>DAIYU_IDS.includes(b.id)).some(b=>b.stale);
+    const amb=data.gateway;
+    if(amb&&amb.temp!=null){
+      document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
+    }
+    setConn(isOnline, anyStale);
+    if(data.last_updated){
+      const d=new Date(data.last_updated),p=n=>String(n).padStart(2,'0');
+      const label=online?'最終更新':'最終取得';
+      document.getElementById('upd').textContent=`${label} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    renderDaiyu();
+  }catch(e){
+    isOnline=false; lastOnline=false; setConn(false); renderDaiyu();
+  }
+}
+
+load();
+setInterval(load,5000);
+
+function updateClock(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const days=['日','月','火','水','木','金','土'];
+  const date=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}（${days[d.getDay()]}）`;
+  const time=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  document.getElementById('clock').innerHTML=`<span class="date">${date}</span><span class="time">${time}</span>`;
+}
+updateClock();
+setInterval(updateClock,1000);
+</script>
+</body>
+</html>

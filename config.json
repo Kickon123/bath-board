@@ -12,6 +12,7 @@
     "swipe_wait_ms": 1500,
     "inkbird_package": "com.inkbird.inkbirdapp",
     "page_refresh_wait": 3,
+    "devices": ["湯畑", "大浴場(男)"],
     "ui": {
       "close_btn_x":  30,
       "close_btn_y":  73,
@@ -36,6 +37,8 @@
     { "id": 2, "name": "ぬるめの湯", "sensor_name": "ぬるめの湯", "left": 74, "top": 33, "target": "35〜38℃", "color": "warm"    },
     { "id": 3, "name": "低めの湯",   "sensor_name": "低めの湯",   "left": 70, "top": 52, "target": "33〜36℃", "color": "mild"    },
     { "id": 5, "name": "座湯",       "sensor_name": "座湯",       "left": 55, "top": 62, "target": "",         "color": "neutral", "active": false },
-    { "id": 6, "name": "立湯",       "sensor_name": "立湯",       "left": 15, "top": 52, "target": "",         "color": "neutral" }
+    { "id": 6, "name": "立湯",       "sensor_name": "立湯",       "left": 15, "top": 52, "target": "",         "color": "neutral" },
+    { "id": 20, "name": "男湯",      "sensor_name": "男湯",       "device": "大浴場(男)", "target": "", "color": "hot"  },
+    { "id": 21, "name": "女湯",      "sensor_name": "女湯",       "device": "大浴場(男)", "target": "", "color": "warm" }
   ]
 }

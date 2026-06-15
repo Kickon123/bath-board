@@ -232,8 +232,9 @@ function tempTextColor(t){
   return '#7ab8e0';
 }
 
+const DAIYU_IDS = new Set([20, 21]);
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
-let daiTempMap={}, daiStaleMap={}, daiAtMap={}, daiOnline=true;
+let daiTempMap={}, daiStaleMap={}, daiAtMap={};
 
 function fmtAt(iso){
   if(!iso) return '';
@@ -285,7 +286,7 @@ function renderDaiyu(){
     tempEl.style.color=tempTextColor(t);
     const bc=tempColorDaiyu(t);
     card.style.setProperty('--bc', bc||'rgba(255,180,0,.04)');
-    const isStale=!daiOnline||daiStaleMap[s.id];
+    const isStale=!isOnline||daiStaleMap[s.id];
     card.classList.toggle('stale', isStale);
     if(updEl) updEl.textContent=isStale&&daiAtMap[s.id]?`⚠ ${fmtAt(daiAtMap[s.id])}`:'';
   }
@@ -314,43 +315,31 @@ async function load(){
     if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
     tempMap={}; staleMap={}; atMap={};
-    for(const b of data.baths){ tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at; }
-    const anyStale=data.baths.some(b=>b.stale);
+    daiTempMap={}; daiStaleMap={}; daiAtMap={};
+    for(const b of data.baths){
+      if(DAIYU_IDS.has(b.id)){
+        daiTempMap[b.id]=b.temp; daiStaleMap[b.id]=b.stale; daiAtMap[b.id]=b.at;
+      } else {
+        tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at;
+      }
+    }
+    const anyStale=data.baths.filter(b=>!DAIYU_IDS.has(b.id)).some(b=>b.stale);
+    const daiAnyStale=data.baths.filter(b=>DAIYU_IDS.has(b.id)).some(b=>b.stale);
     const amb=data.gateway;
     if(amb&&amb.temp!=null){
       document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
     }
     setConn(isOnline, anyStale);
+    setConn2(isOnline, daiAnyStale);
     if(data.last_updated){
       const d=new Date(data.last_updated),p=n=>String(n).padStart(2,'0');
       const label=online?'最終更新':'最終取得';
       document.getElementById('upd').textContent=`${label} ${p(d.getHours())}:${p(d.getMinutes())}`;
     }
     render();
-  }catch(e){
-    isOnline=false; lastOnline=false; setConn(false); render();
-  }
-}
-
-// 大浴場データ取得（現在は未実装 → 接続待ち表示）
-async function loadDaiyu(){
-  try{
-    const res=await fetch('/api/daiyokujo');
-    if(!res.ok) throw new Error('no data');
-    const data=await res.json();
-    daiOnline=data.online!==false;
-    daiTempMap={}; daiStaleMap={}; daiAtMap={};
-    for(const b of (data.baths||[])){
-      daiTempMap[b.id]=b.temp; daiStaleMap[b.id]=b.stale; daiAtMap[b.id]=b.at;
-    }
-    const anyStale=(data.baths||[]).some(b=>b.stale);
-    setConn2(daiOnline, anyStale);
     renderDaiyu();
   }catch(e){
-    // API未実装のため接続待ち表示のまま
-    daiOnline=false;
-    setConn2(false, false);
-    renderDaiyu();
+    isOnline=false; lastOnline=false; setConn(false); setConn2(false, false); render(); renderDaiyu();
   }
 }
 
@@ -358,9 +347,7 @@ document.getElementById('photo').onload=render;
 window.addEventListener('resize',render);
 render();
 load();
-setInterval(load,60000);
-loadDaiyu();
-setInterval(loadDaiyu,60000);
+setInterval(load,5000);
 
 function updateClock(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');

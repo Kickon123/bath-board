@@ -267,26 +267,27 @@ def find_device_coords(cfg: dict, device_name: str) -> tuple[int, int] | None:
     return None
 
 
-def refresh_device_view(cfg: dict):
+def refresh_device_view(cfg: dict, device_name: str | None = None):
     """
-    Inkbirdアプリを毎回クリーン起動（強制終了→起動）して確実にホーム一覧から始め、
-    「湯畑」をテキスト検索でタップしてデバイス画面を開く。
-    （非力な実機では am start だけだと前面化が不安定で湯畑を見失うため、force-stop方式）
+    Inkbirdアプリをクリーン起動（強制終了→起動）してホーム一覧から始め、
+    指定デバイス名をテキスト検索でタップしてデバイス画面を開く。
+    device_name が None の場合は config の ui.device_name を使う。
+    2台目以降は force-stop せず、バックキーでホームに戻ってからタップする。
     """
     ui        = cfg["adb"].get("ui", {})
     wait      = cfg["adb"].get("page_refresh_wait", 4)
-    app_wait  = cfg["adb"].get("app_launch_wait", 9)     # クリーン起動のロード待ち
-    target    = ui.get("device_name", "湯畑")
-    pkg = cfg["adb"].get("inkbird_package", "com.inkbird.inkbirdapp")
+    app_wait  = cfg["adb"].get("app_launch_wait", 9)
+    target    = device_name or ui.get("device_name", "湯畑")
+    pkg       = cfg["adb"].get("inkbird_package", "com.inkbird.inkbirdapp")
 
-    # ⓪ クリーン起動：強制終了 → ランチャーから起動（必ずホーム一覧に出る）
+    # ① クリーン起動：強制終了 → ランチャーから起動（必ずホーム一覧に出る）
     adb(cfg, "shell", "am", "force-stop", pkg)
     time.sleep(2)
     adb(cfg, "shell", "monkey", "-p", pkg, "-c",
         "android.intent.category.LAUNCHER", "1")
     time.sleep(app_wait)
 
-    # ① 「湯畑」がホーム一覧に安定して現れるまでリトライしてタップ
+    # ② デバイス名がホーム一覧に安定して現れるまでリトライしてタップ
     log.info(f"  「{target}」を検索中...")
     coords = None
     for attempt in range(6):
@@ -304,7 +305,7 @@ def refresh_device_view(cfg: dict):
         log.info(f"  「{target}」が見つからず、デフォルト座標を使用: ({device_x},{device_y})")
         adb(cfg, "shell", "input", "tap", str(device_x), str(device_y))
 
-    # ② デバイス画面のロード待ち
+    # ③ デバイス画面のロード待ち
     log.info(f"  データ読み込み待ち {wait}秒...")
     time.sleep(wait)
 
@@ -324,22 +325,19 @@ def find_sensor_tabs(root: ET.Element) -> list[tuple[int, int]]:
     return tabs
 
 
-def collect_all_temperatures(cfg: dict) -> dict:
+def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     """
-    デバイス画面上部の番号タブを1つずつタップして全センサーを巡回し温度を収集する。
-    （非力な実機ではスワイプが不安定なため、確実なタブタップ方式を採用）
-    - センサー名（device_name）で湯舟を識別する（位置に依存しない）
-    - ゲートウェイ（IBS-M2 等）は外気温として別途保存（タブ選択前の初期画面に出る）
-    戻り値: {"sensors": {名: {temp,humidity}}, "gateway": {temp,humidity}|None}
+    1つのInkbirdデバイスのセンサーを全タブ巡回して収集する。
+    デバイス画面上部の番号タブを1つずつタップ。
+    戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
     """
-    refresh_device_view(cfg)
+    refresh_device_view(cfg, device_name)
 
     collected: dict = {}
     gateway: dict | None = None
     tab_wait = cfg["adb"].get("tab_wait", 4)
 
     def read_current(label: str):
-        """現在表示中の画面を読み取り、ゲートウェイ or センサーとして記録"""
         nonlocal gateway
         root = dump_ui(cfg)
         if root is None:
@@ -360,10 +358,7 @@ def collect_all_temperatures(cfg: dict) -> dict:
                      (f" / {s['humidity']}%" if s.get("humidity") is not None else ""))
         return root
 
-    # ① タブ選択前の初期画面（ゲートウェイIBS-M2の外気温・湿度が出る）を読む
     root = read_current("初期画面")
-
-    # ② 上部の番号タブを検出して1つずつタップ巡回
     tabs = find_sensor_tabs(root) if root is not None else []
     log.info(f"  検出タブ数: {len(tabs)} {tabs}")
     for i, (x, y) in enumerate(tabs):
@@ -371,8 +366,30 @@ def collect_all_temperatures(cfg: dict) -> dict:
         time.sleep(tab_wait)
         read_current(f"タブ{i+1}")
 
-    log.info(f"  取得完了: センサー={list(collected.keys())} / ゲートウェイ={'あり' if gateway else 'なし'}")
+    log.info(f"  [{device_name}] 取得完了: センサー={list(collected.keys())} / ゲートウェイ={'あり' if gateway else 'なし'}")
     return {"sensors": collected, "gateway": gateway}
+
+
+def collect_all_temperatures(cfg: dict) -> dict:
+    """
+    config の adb.devices リストに定義された全Inkbirdデバイスを順に巡回して
+    センサー温度を収集する。
+    devices が未定義の場合は ui.device_name の1台のみ取得（後方互換）。
+    戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
+    """
+    devices = cfg["adb"].get("devices") or [cfg["adb"]["ui"].get("device_name", "湯畑")]
+    all_sensors: dict = {}
+    all_gateway: dict | None = None
+
+    for dev_name in devices:
+        log.info(f"=== デバイス「{dev_name}」取得開始 ===")
+        result = collect_device_temperatures(cfg, dev_name)
+        all_sensors.update(result["sensors"])
+        if result["gateway"] and all_gateway is None:
+            all_gateway = result["gateway"]
+
+    log.info(f"  全デバイス取得完了: センサー={list(all_sensors.keys())}")
+    return {"sensors": all_sensors, "gateway": all_gateway}
 
 
 # ── temperatures.json 更新 ────────────────────────────

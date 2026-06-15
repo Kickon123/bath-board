@@ -72,6 +72,25 @@ def board_all():
     return send_from_directory("static", "base-all.html")
 
 
+# ── /bath/* URL（セクション別ビュー）────────────────────
+@app.get("/bath/yubatake")
+def bath_yubatake():
+    # 湯畑（露天風呂）のみ
+    return send_from_directory("static", "base7-flat.html")
+
+
+@app.get("/bath/daiyokujo")
+def bath_daiyokujo():
+    # 大浴場（男湯・女湯）のみ
+    return send_from_directory("static", "daiyokujo.html")
+
+
+@app.get("/bath/all")
+def bath_all():
+    # 左: 露天風呂 / 右: 大浴場 合体表示
+    return send_from_directory("static", "base-all.html")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"クラウド中継サーバー起動: http://0.0.0.0:{port}/")
