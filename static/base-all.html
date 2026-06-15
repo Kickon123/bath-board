@@ -10,8 +10,10 @@
     height:100vh;display:flex;flex-direction:column;}
 
   /* ── トップバー ── */
-  #topbar{display:flex;align-items:center;justify-content:space-between;
-    padding:8px 16px;background:rgba(10,18,8,.8);flex-shrink:0;}
+  #topbar{display:flex;align-items:stretch;background:rgba(10,18,8,.8);flex-shrink:0;}
+  #topbar-l{flex:65;display:flex;align-items:center;justify-content:space-between;
+    padding:8px 16px;border-right:1px solid rgba(255,200,100,.15);}
+  #topbar-r{flex:35;}
   #topbar h1{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
   #topbar h1 small{display:block;font-size:1.2vw;color:#b8a884;}
   #info{display:flex;gap:12px;align-items:center;font-size:1.75vw;}
@@ -137,12 +139,16 @@
 <body>
 
 <div id="topbar">
-  <h1>♨ 露天風呂「湯畑」温度マップ<small>山中温泉 花つばき</small></h1>
-  <div id="info">
-    <span>📍石川県加賀市</span>
-    <span class="t" id="at">--.-℃</span>
-    <span class="upd" id="upd"></span>
+  <div id="topbar-l">
+    <h1>♨ 露天風呂「湯畑」温度マップ<small>山中温泉 花つばき</small></h1>
+    <div id="info">
+      <span>📍石川県加賀市</span>
+      <span class="t" id="at">--.-℃</span>
+      <span class="upd" id="upd"></span>
+      <span id="conn" class="connbadge ok">🟢 接続中</span>
+    </div>
   </div>
+  <div id="topbar-r"></div>
 </div>
 
 <div id="main-row">
@@ -151,7 +157,6 @@
   <div id="wrap">
     <img src="/static/base7.png" id="photo" alt="湯畑"/>
     <div id="pins"></div>
-    <span id="conn" class="connbadge ok" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:10;">🟢 接続中</span>
     <div id="right-panel">
       <div id="yugata">湯畑/Yubatake</div>
       <div id="legend">
