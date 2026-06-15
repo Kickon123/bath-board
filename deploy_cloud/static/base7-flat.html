@@ -119,16 +119,13 @@ function fmtAt(iso){
   return sameDay?`${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-// ?fit=contain で全体表示（端が切れない）/ 既定は cover（枠を埋める）
-const FIT=new URLSearchParams(location.search).get('fit')||'cover';
 function render(){
   const wrap=document.getElementById('wrap');
   const img=document.getElementById('photo');
   const pinsEl=document.getElementById('pins');
-  img.style.objectFit=FIT;
   const iw=img.naturalWidth||1514, ih=img.naturalHeight||781;
   const bw=wrap.clientWidth, bh=wrap.clientHeight;
-  const scale=FIT==='contain'?Math.min(bw/iw, bh/ih):Math.max(bw/iw, bh/ih);
+  const scale=Math.max(bw/iw, bh/ih);
   const dw=iw*scale, dh=ih*scale;
   const ox=(bw-dw)/2, oy=(bh-dh)/2;
 
