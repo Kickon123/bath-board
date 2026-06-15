@@ -51,6 +51,11 @@ def slideshow64():
 def base7():
     return send_from_directory("static", "base7-flat.html")
 
+@app.route("/base-all")
+@app.route("/all")
+def base_all():
+    return send_from_directory("static", "base-all.html")
+
 @app.route("/api/baths")
 def api_baths():
     cfg   = load_config()

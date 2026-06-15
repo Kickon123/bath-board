@@ -61,8 +61,15 @@ def slideshow64():
 @app.get("/base7")
 @app.get("/board")
 def board():
-    # 温度マップ単体（/api/baths を5秒ごとに読む作りになっている）
+    # 露天風呂温度マップ単体
     return send_from_directory("static", "base7-flat.html")
+
+
+@app.get("/base-all")
+@app.get("/all")
+def board_all():
+    # 露天風呂 + 大浴場 合体表示
+    return send_from_directory("static", "base-all.html")
 
 
 if __name__ == "__main__":
