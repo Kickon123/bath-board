@@ -44,9 +44,17 @@ def api_baths():
 
 
 @app.get("/")
+@app.get("/slideshow")
+def slideshow():
+    # スライドショー案内板（左:温度マップ(base7-flat) / 右:案内画像）
+    # 左パネルは iframe で /base7 を読み込む作りになっている
+    return send_from_directory("static", "slideshow.html")
+
+
+@app.get("/base7")
 @app.get("/board")
 def board():
-    # 既存の案内板HTMLをそのまま配信（/api/baths を5秒ごとに読む作りになっている）
+    # 温度マップ単体（/api/baths を5秒ごとに読む作りになっている）
     return send_from_directory("static", "base7-flat.html")
 
 
