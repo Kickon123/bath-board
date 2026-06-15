@@ -42,6 +42,11 @@ def save_temps(data):
 def slideshow():
     return send_from_directory("static", "slideshow.html")
 
+@app.route("/slideshow64")
+@app.route("/64")
+def slideshow64():
+    return send_from_directory("static", "slideshow64.html")
+
 @app.route("/base7")
 def base7():
     return send_from_directory("static", "base7-flat.html")

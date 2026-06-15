@@ -46,9 +46,16 @@ def api_baths():
 @app.get("/")
 @app.get("/slideshow")
 def slideshow():
-    # スライドショー案内板（左:温度マップ(base7-flat) / 右:案内画像）
+    # スライドショー案内板 7:3（左:温度マップ(base7-flat) / 右:案内画像）
     # 左パネルは iframe で /base7 を読み込む作りになっている
     return send_from_directory("static", "slideshow.html")
+
+
+@app.get("/slideshow64")
+@app.get("/64")
+def slideshow64():
+    # スライドショー案内板 6:4 版（右の案内画像を拡大）
+    return send_from_directory("static", "slideshow64.html")
 
 
 @app.get("/base7")
