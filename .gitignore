@@ -3,3 +3,6 @@ __pycache__/
 bath_system.log*
 latest.json
 temperatures.json
+.claude/
+server.out
+server.pid
