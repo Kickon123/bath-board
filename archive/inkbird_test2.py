@@ -4,8 +4,8 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 import requests, json, time
 
 H = {
-    "api-key": "8V073Jrc4H",
-    "api-secret-key": "9HbzOuNhQlkESVW7PqxQ",
+    "api-key": "__INKBIRD_API_KEY__",
+    "api-secret-key": "__INKBIRD_API_SECRET_KEY__",
     "content-type": "application/json",
     "accept": "*/*",
     "accept-encoding": "gzip, deflate, br",

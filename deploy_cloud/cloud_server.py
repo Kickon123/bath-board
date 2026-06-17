@@ -20,13 +20,15 @@ CORS(app)
 
 BASE_DIR = Path(__file__).parent
 STORE    = BASE_DIR / "latest.json"
-# なりすまし防止の共有トークン（config.phone.json の cloud.token と一致させる）
-SECRET   = os.environ.get("PUSH_TOKEN", "bath-secret-2026")
+# なりすまし防止の共有トークン。実値はコードに書かず、環境変数 PUSH_TOKEN で必ず設定する
+# （会社のシークレット管理から注入）。スマホ側 config.json の cloud.token と一致させること。
+# 未設定時は安全側に倒して全 push を拒否する。
+SECRET   = os.environ.get("PUSH_TOKEN")
 
 
 @app.post("/api/push")
 def api_push():
-    if request.headers.get("X-Token") != SECRET:
+    if not SECRET or request.headers.get("X-Token") != SECRET:
         return jsonify(error="forbidden"), 403
     data = request.get_json(silent=True)
     if data is None:

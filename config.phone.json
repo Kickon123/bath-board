@@ -27,7 +27,7 @@
   },
   "cloud": {
     "url": "https://bath-board.onrender.com",
-    "token": "bath-secret-2026"
+    "token": "__PUSH_TOKEN__"
   },
   "baths": [
     { "id": 1, "name": "高めの湯",   "sensor_name": "高めの湯",   "left": 63, "top": 18, "target": "37〜40℃", "color": "hot"     },

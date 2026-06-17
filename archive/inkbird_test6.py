@@ -4,8 +4,8 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 import requests, json
 
 H = {
-    "api-key": "8V073Jrc4H",
-    "api-secret-key": "9HbzOuNhQlkESVW7PqxQ",
+    "api-key": "__INKBIRD_API_KEY__",
+    "api-secret-key": "__INKBIRD_API_SECRET_KEY__",
     "content-type": "application/json",
     "accept": "*/*",
     "accept-encoding": "gzip, deflate, br",
@@ -14,8 +14,8 @@ H = {
 BASE = "https://us.api-inkbird.com"
 GW   = "eba5d6d312122cba07raz1"
 SUB  = "eb2bda2a76897bc28bopk9"
-UID  = "az1755672773522595hv"
-INKUID = "22f6de4816b54d6fb7cfb525d57738b1"
+UID  = "__TUYA_UID__"
+INKUID = "__INKBIRD_UID__"
 HOME = 261445727
 PID  = "cx7qfwsatomtk5p8"
 

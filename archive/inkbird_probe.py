@@ -8,8 +8,8 @@ import requests
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 H = {
-    "api-key": "8V073Jrc4H",
-    "api-secret-key": "9HbzOuNhQlkESVW7PqxQ",
+    "api-key": "__INKBIRD_API_KEY__",
+    "api-secret-key": "__INKBIRD_API_SECRET_KEY__",
     "content-type": "application/json",
     "accept": "*/*",
     "user-agent": "InkbirdApp/2.1.5 (iPhone; iOS 26.4.2; Scale/3.00)",
