@@ -190,8 +190,8 @@
 
 <!-- ナビゲーション -->
 <div id="nav">
-  <button class="nav-btn active" onclick="showScreen('bath')">♨ お風呂</button>
-  <button class="nav-btn" onclick="showScreen('map')">🗺 館内マップ</button>
+  <button class="nav-btn active" data-screen="bath" onclick="showScreen('bath')">♨ お風呂</button>
+  <button class="nav-btn" data-screen="map" onclick="showScreen('map')">🗺 館内マップ</button>
 </div>
 
 <script>
@@ -200,8 +200,14 @@ function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
+  document.querySelector(`.nav-btn[data-screen="${name}"]`).classList.add('active');
 }
+
+// ===== フットスイッチ操作 =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') showScreen('bath');
+  else if (e.key === 'ArrowRight' || e.key === 'b' || e.key === 'B') showScreen('map');
+});
 
 // ===== カルーセル =====
 const DURATION = 10;
