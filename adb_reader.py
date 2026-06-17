@@ -251,13 +251,24 @@ def is_gateway_device(device_name: str) -> bool:
 
 
 # ── 全センサー温度収集 ────────────────────────────────
+def _norm_name(s: str) -> str:
+    """デバイス名比較用の正規化。全角/半角カッコ・空白の違いを吸収する。
+    例: 「大浴場（男）」「大浴場 (男)」「大浴場(男)」を同一視する。"""
+    if not s:
+        return ""
+    table = str.maketrans("（）　", "() ")
+    return s.translate(table).replace(" ", "").strip()
+
+
 def find_device_coords(cfg: dict, device_name: str) -> tuple[int, int] | None:
-    """UIダンプからデバイス名のテキストを探してタップ座標を返す"""
+    """UIダンプからデバイス名のテキストを探してタップ座標を返す。
+    全角/半角カッコの違いは無視して照合する（B案）。"""
     root = dump_ui(cfg)
     if root is None:
         return None
+    target = _norm_name(device_name)
     for node in root.iter("node"):
-        if node.get("text", "") == device_name:
+        if _norm_name(node.get("text", "")) == target:
             bounds = node.get("bounds", "")
             nums = re.findall(r"\d+", bounds)
             if len(nums) >= 4:
