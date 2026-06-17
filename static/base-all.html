@@ -347,7 +347,7 @@ document.getElementById('photo').onload=render;
 window.addEventListener('resize',render);
 render();
 load();
-setInterval(load,5000);
+setInterval(load,10000);
 
 function updateClock(){
   const d=new Date(), p=n=>String(n).padStart(2,'0');

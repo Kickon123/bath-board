@@ -365,7 +365,7 @@ async function fetchNow() {
 }
 
 // 5秒ごとに更新チェック（タイムスタンプが変わったら即座に画面更新）
-setInterval(checkUpdates, 5000);
+setInterval(checkUpdates, 10000);
 // ADB状態を10秒ごとに確認
 setInterval(checkAdbStatus, 10000);
 
