@@ -164,7 +164,9 @@ async function load(){
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
     tempMap={}; staleMap={}; atMap={};
     for(const b of data.baths){ tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at; }
-    const anyStale=data.baths.some(b=>b.stale);
+    // base7は露天風呂(湯畑)のみ表示。男湯/女湯など非表示の湯舟のstaleで「一部未取得」にしない
+    const shownIds=new Set(SPOTS.map(s=>s.id));
+    const anyStale=data.baths.some(b=>shownIds.has(b.id)&&b.stale);
     const amb=data.gateway;
     if(amb&&amb.temp!=null){
       document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
