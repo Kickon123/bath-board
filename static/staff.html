@@ -374,43 +374,56 @@ function updateClock(){
     lastData.last_updated?`(${agoText(lastData.last_updated)})`:"";
 }
 
+// ── Y軸スケール計算（0.1℃単位まで対応）──────────
+function calcYScale(temps){
+  const rawMin=Math.min(...temps), rawMax=Math.max(...temps);
+  const rawRange=rawMax-rawMin;
+  // データ幅に対してタイトなマージン
+  const margin=Math.max(0.3, rawRange*0.15);
+  const yMin=Math.round((rawMin-margin)*10)/10;
+  const yMax=Math.round((rawMax+margin)*10)/10;
+  const yR=yMax-yMin||0.5;
+  // ステップを範囲に応じて自動決定
+  let step;
+  if(yR<=0.8)      step=0.2;
+  else if(yR<=2)   step=0.5;
+  else if(yR<=5)   step=1;
+  else             step=2;
+  const fmtY=v=>step<1?v.toFixed(1):String(Math.round(v));
+  return {yMin,yMax,yR,step,fmtY};
+}
+
 // ── SVGチャート（単一湯舟）────────────────────────
-function drawSingleChart(svgEl, points, target, color="#4f46e5"){
-  const W=320,H=150,PAD={t:22,r:14,b:28,l:40};
+function drawSingleChart(svgEl, points, _unused, color="#4f46e5"){
+  const W=320,H=150,PAD={t:22,r:14,b:28,l:42};
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
   const temps=points.map(p=>p.temp).filter(t=>t!=null);
   if(!temps.length){svgEl.innerHTML="";return;}
 
-  const margin=Math.max(2,(Math.max(...temps)-Math.min(...temps))*.3||2);
-  const tlo=target?Math.min(Math.min(...temps),target.lo):Math.min(...temps);
-  const thi=target?Math.max(Math.max(...temps),target.hi):Math.max(...temps);
-  const yMin=Math.floor(tlo-margin), yMax=Math.ceil(thi+margin);
-  const yR=yMax-yMin||1;
+  const {yMin,yMax,yR,step,fmtY}=calcYScale(temps);
   const tx=i=>PAD.l+(i/(points.length-1||1))*cw;
   const ty=t=>PAD.t+(1-(t-yMin)/yR)*ch;
 
   let h="";
-  if(target){
-    const ry1=ty(target.hi),ry2=ty(target.lo);
-    h+=`<rect x="${PAD.l}" y="${ry1}" width="${cw}" height="${ry2-ry1}" fill="rgba(22,163,74,.1)" stroke="rgba(22,163,74,.3)" stroke-width=".8"/>`;
-    h+=`<text x="${PAD.l+3}" y="${ry1-3}" fill="rgba(22,163,74,.7)" font-size="8">上限 ${target.hi}℃</text>`;
-    h+=`<text x="${PAD.l+3}" y="${ry2+9}" fill="rgba(22,163,74,.7)" font-size="8">下限 ${target.lo}℃</text>`;
-  }
-  const step=Math.max(1,Math.round(yR/4));
-  for(let t=Math.ceil(yMin);t<=yMax;t+=step){
+  // グリッド＋Y軸ラベル
+  for(let t=yMin;t<=yMax+step*0.01;t=Math.round((t+step)*10)/10){
     const y=ty(t);
+    if(y<PAD.t-2||y>H-PAD.b+2) continue;
     h+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
-    h+=`<text x="${PAD.l-3}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${t}</text>`;
+    h+=`<text x="${PAD.l-4}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${fmtY(t)}</text>`;
   }
+  // ライン
   const pts=points.map((p,i)=>p.temp!=null?`${tx(i)},${ty(p.temp)}`:null).filter(Boolean);
   if(pts.length>1)
     h+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // ドット＋最新値ラベル
   points.forEach((p,i)=>{
     if(p.temp==null)return;
     const cx=tx(i),cy=ty(p.temp),last=i===points.length-1;
     h+=`<circle cx="${cx}" cy="${cy}" r="${last?5:2.5}" fill="${last?"#fff":color}" stroke="${color}" stroke-width="${last?2:0}"/>`;
     if(last) h+=`<text x="${cx}" y="${cy-9}" text-anchor="middle" fill="${color}" font-size="10" font-weight="700">${p.temp.toFixed(1)}℃</text>`;
   });
+  // X軸ラベル
   const step2=Math.max(1,Math.floor(points.length/4));
   points.forEach((p,i)=>{
     if(i%step2!==0&&i!==points.length-1)return;
@@ -440,18 +453,16 @@ function drawOverallChart(svgEl, allData){
   const n=allTimes.length;
 
   const allTemps=Object.values(groups).flatMap(g=>g.pts.map(p=>p.temp));
-  const yMin=Math.floor(Math.min(...allTemps)-1);
-  const yMax=Math.ceil(Math.max(...allTemps)+1);
-  const yR=yMax-yMin||1;
+  const {yMin,yMax,yR,step,fmtY}=calcYScale(allTemps);
   const tx=i=>PAD.l+(i/(n-1||1))*cw;
   const ty=t=>PAD.t+(1-(t-yMin)/yR)*ch;
 
   let h="";
-  const step=Math.max(1,Math.round(yR/4));
-  for(let t=Math.ceil(yMin);t<=yMax;t+=step){
+  for(let t=yMin;t<=yMax+step*0.01;t=Math.round((t+step)*10)/10){
     const y=ty(t);
+    if(y<PAD.t-2||y>H-PAD.b+2) continue;
     h+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
-    h+=`<text x="${PAD.l-3}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${t}</text>`;
+    h+=`<text x="${PAD.l-4}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${fmtY(t)}</text>`;
   }
 
   for(const id of ids){
