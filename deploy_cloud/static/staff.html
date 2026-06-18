@@ -294,24 +294,17 @@ function parseTarget(s){
   const m=s.match(/(\d+(?:\.\d+)?)[〜~\-−](\d+(?:\.\d+)?)/);
   return m ? {lo:parseFloat(m[1]),hi:parseFloat(m[2])} : null;
 }
-function calcStatus(temp,stale,tgt){
+function calcStatus(temp,stale){
   if(stale||temp==null) return {key:"off",label:"データなし"};
-  if(!tgt)              return {key:"ok", label:"取得中 ✓"};
-  const over=temp-tgt.hi, under=tgt.lo-temp;
-  if(over >2) return {key:"hot", label:"高め ⚠",  diff:`+${over.toFixed(1)}℃`};
-  if(under>2) return {key:"cold",label:"低め ⚠",  diff:`-${under.toFixed(1)}℃`};
-  if(over >0) return {key:"warn",label:"やや高め", diff:`+${over.toFixed(1)}℃`};
-  if(under>0) return {key:"warn",label:"やや低め", diff:`-${under.toFixed(1)}℃`};
-  return            {key:"ok",  label:"正常 ✓"};
+  return                       {key:"ok", label:"取得中 ✓"};
 }
 
 // ── 湯舟カード描画 ────────────────────────────────
 function renderBaths(baths){
   bathsData = baths;
   document.getElementById("bath-list").innerHTML = baths.map(b => {
-    const tgt=parseTarget(b.target||""), st=calcStatus(b.temp,b.stale,tgt);
+    const st=calcStatus(b.temp,b.stale);
     const hasT=b.temp!=null;
-    const diffHtml=st.diff?`<span class="bath-diff ${st.diff[0]==='+'?'diff-over':'diff-under'}">${st.diff}</span>`:"";
     return `
     <div class="bath-card ${st.key}" onclick="openBathModal(${b.id})">
       <div class="bath-inner">
@@ -321,10 +314,10 @@ function renderBaths(baths){
         </div>
         <div class="bath-temp-row">
           <span class="bath-temp ${st.key}">${hasT?Number(b.temp).toFixed(1):"--.-"}</span>
-          <span class="bath-unit">${hasT?"℃":""}</span>${diffHtml}
+          <span class="bath-unit">${hasT?"℃":""}</span>
         </div>
         <div class="bath-bottom">
-          <span class="bath-target">目標 ${b.target||"未設定"}</span>
+          <span class="bath-target"></span>
           <span class="bath-age${b.stale?" stale":""}">${b.at?agoText(b.at):"時刻不明"}</span>
         </div>
       </div>
@@ -544,7 +537,7 @@ async function loadBathChart(hours){
     document.getElementById("bath-hist-table").style.display="";
     drawSingleChart(document.getElementById("bath-chart"), rows, null, bathColor(bathId));
     document.getElementById("bath-hist-tbody").innerHTML=[...rows].reverse().map(r=>{
-      const st2=calcStatus(r.temp,r.stale,tgt);
+      const st2=calcStatus(r.temp,r.stale);
       return `<tr>
         <td>${fmtShort(r.at)}</td>
         <td class="td-${st2.key}" style="font-weight:600">${r.temp!=null?Number(r.temp).toFixed(1)+"℃":"--"}</td>
@@ -565,10 +558,10 @@ function setBathRange(btn, hours){
 
 async function openBathModal(bathId){
   const bath=bathsData.find(b=>b.id===bathId); if(!bath) return;
-  const tgt=parseTarget(bath.target||""), st=calcStatus(bath.temp,bath.stale,tgt);
-  _bathModalId=bathId; _bathModalTgt=tgt;
+  const st=calcStatus(bath.temp,bath.stale);
+  _bathModalId=bathId; _bathModalTgt=null;
   document.getElementById("bath-modal-title").textContent=bath.name;
-  document.getElementById("bath-modal-target").textContent=bath.target?`目標 ${bath.target}`:"";
+  document.getElementById("bath-modal-target").textContent="";
   const curEl=document.getElementById("bath-modal-current");
   curEl.textContent=bath.temp!=null?Number(bath.temp).toFixed(1)+"℃":"-- ℃";
   curEl.className=`td-${st.key}`;
