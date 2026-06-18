@@ -93,6 +93,12 @@ def bath_all():
     return send_from_directory("static", "base-all.html")
 
 
+@app.get("/staff")
+def staff():
+    # 従業員向けステータスモニター（スマホ縦画面）
+    return send_from_directory("static", "staff.html")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"クラウド中継サーバー起動: http://0.0.0.0:{port}/")

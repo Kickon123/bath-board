@@ -99,8 +99,12 @@ GET https://bath-board.onrender.com/api/baths
 - **取得中はスマホを触らない／PC から割り込まない。** 温度取得は Inkbird を前面にして UI ダンプするため、
   途中で別アプリを開いたり PC から `am start`・`screencap`・`uiautomator dump` を打つと
   「湯畑が見つからず データなし」になる。確認は上記 Render API（非干渉）で行う。
-- **スマホ再起動で tcpip モードがリセットされる。** 起動できなくなったら PC に USB 接続して
-  `adb tcpip 5555` を再実行する。
+- **スマホ再起動で tcpip モードがリセットされる。** 再起動後は Termux を開いて以下を実行すれば OK（PC 不要）:
+  ```bash
+  adb tcpip 5555
+  bash ~/bath_system/ctl.sh start
+  ```
+  それでも繋がらない場合は PC に USB 接続して `adb tcpip 5555` を実行してから `ctl.sh start`。
 - **取得間隔は 3 分（`adb.interval: 180`）が最適。** 水温は分単位でしか変化せず、UI 操作 1 周に
   1〜2 分かかるため、間隔を縮めても更新は速くならず発熱・電池消費だけ増える。常時充電が前提。
 - スリープで CPU が止まらないよう `ctl.sh`/`run.sh` が `termux-wake-lock` を確保している。

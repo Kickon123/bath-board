@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>スタッフモニター</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --bg:#0c0e14;--card:#151821;--border:#232635;
+    --ok:#22c55e;--warn:#f59e0b;--hot:#f97316;--cold:#38bdf8;--ng:#ef4444;--off:#4b5563;
+    --text:#f1f5f9;--sub:#64748b;--accent:#818cf8;
+  }
+  body{background:var(--bg);color:var(--text);
+    font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
+    min-height:100dvh;padding-bottom:env(safe-area-inset-bottom,16px);}
+
+  /* ── ヘッダー ─────────────────────────────────── */
+  #header{
+    position:sticky;top:0;z-index:20;
+    background:var(--bg);padding:14px 16px 12px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  #header-left h1{font-size:1.05rem;font-weight:700;letter-spacing:.04em;}
+  #header-left .sub{font-size:.72rem;color:var(--sub);margin-top:2px;}
+  #sys-badge{
+    display:flex;align-items:center;gap:5px;
+    font-size:.78rem;font-weight:700;
+    padding:6px 12px;border-radius:999px;
+    transition:all .4s;
+  }
+  #sys-badge.ok  {background:rgba(34,197,94,.18); color:var(--ok); border:1.5px solid rgba(34,197,94,.35);}
+  #sys-badge.warn{background:rgba(245,158,11,.18);color:var(--warn);border:1.5px solid rgba(245,158,11,.35);}
+  #sys-badge.ng  {background:rgba(239,68,68,.18); color:var(--ng); border:1.5px solid rgba(239,68,68,.35);
+    animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* ── 更新バー ─────────────────────────────────── */
+  #update-bar{
+    padding:8px 16px;display:flex;align-items:center;justify-content:space-between;
+    font-size:.72rem;color:var(--sub);
+    border-bottom:1px solid var(--border);
+  }
+  #last-time{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;}
+  #last-ago{color:var(--sub);}
+  #progress-wrap{display:flex;align-items:center;gap:6px;font-size:.68rem;}
+  #progress-bar{width:56px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+  #progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 1s linear;}
+
+  /* ── 湯舟カード ───────────────────────────────── */
+  #bath-list{padding:12px 12px 4px;}
+  .bath-card{
+    border-radius:14px;margin-bottom:10px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-left-width:5px;
+    overflow:hidden;
+    transition:border-color .3s;
+  }
+  .bath-card.ok  {border-left-color:var(--ok);}
+  .bath-card.warn{border-left-color:var(--warn);}
+  .bath-card.hot {border-left-color:var(--hot);}
+  .bath-card.cold{border-left-color:var(--cold);}
+  .bath-card.off {border-left-color:var(--off);}
+
+  .bath-inner{padding:14px 16px 12px;}
+
+  /* 上段: 名前 + ステータス */
+  .bath-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .bath-name{font-size:1.05rem;font-weight:700;letter-spacing:.03em;}
+  .status-pill{
+    font-size:.72rem;font-weight:700;padding:4px 11px;border-radius:999px;
+    white-space:nowrap;
+  }
+  .pill-ok  {background:rgba(34,197,94,.18); color:var(--ok);}
+  .pill-warn{background:rgba(245,158,11,.18);color:var(--warn);}
+  .pill-hot {background:rgba(249,115,22,.18);color:var(--hot);}
+  .pill-cold{background:rgba(56,189,248,.18);color:var(--cold);}
+  .pill-off {background:rgba(75,85,99,.25);  color:var(--off);}
+
+  /* 中段: 温度（巨大） */
+  .bath-temp-row{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;}
+  .bath-temp{font-size:3.8rem;font-weight:800;line-height:1;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+  .bath-temp.ok  {color:var(--ok);}
+  .bath-temp.warn{color:var(--warn);}
+  .bath-temp.hot {color:var(--hot);}
+  .bath-temp.cold{color:var(--cold);}
+  .bath-temp.off {color:var(--off);}
+  .bath-unit{font-size:1.4rem;font-weight:500;color:var(--sub);}
+  .bath-diff{font-size:.85rem;font-weight:600;padding:2px 7px;border-radius:6px;align-self:center;}
+  .diff-over {background:rgba(249,115,22,.2);color:var(--hot);}
+  .diff-under{background:rgba(56,189,248,.2);color:var(--cold);}
+
+  /* 下段: 目標・時刻 */
+  .bath-bottom{display:flex;align-items:center;justify-content:space-between;}
+  .bath-target{font-size:.76rem;color:var(--sub);}
+  .bath-age{font-size:.72rem;color:var(--sub);font-variant-numeric:tabular-nums;}
+  .bath-age.stale{color:var(--warn);}
+
+  /* ── 外気温・システム ─────────────────────────── */
+  .section-label{
+    font-size:.65rem;font-weight:700;letter-spacing:.12em;color:var(--sub);
+    padding:8px 16px 4px;
+  }
+  #ambient-card,#sysinfo-card{
+    margin:0 12px 10px;padding:14px 16px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+  }
+  #ambient-card{display:flex;align-items:center;gap:20px;}
+  .amb-item .lbl{font-size:.72rem;color:var(--sub);margin-bottom:2px;}
+  .amb-item .val{font-size:1.8rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;}
+  .amb-item .val.hum{font-size:1.4rem;color:#7dd3fc;}
+
+  .sysinfo-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:7px 0;font-size:.82rem;
+    border-bottom:1px solid var(--border);
+  }
+  .sysinfo-row:last-child{border-bottom:none;}
+  .sysinfo-row .key{color:var(--sub);}
+  .sysinfo-row .val{font-weight:700;font-variant-numeric:tabular-nums;}
+  .v-ok  {color:var(--ok);}
+  .v-warn{color:var(--warn);}
+  .v-ng  {color:var(--ng);}
+  .v-sub {color:var(--sub);}
+
+  /* ── 時計 ─────────────────────────────────────── */
+  #clock{
+    text-align:center;padding:10px 0 6px;
+    font-size:.72rem;color:var(--sub);font-variant-numeric:tabular-nums;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <h1>スタッフモニター</h1>
+    <div class="sub">花つばき 湯畑・大浴場</div>
+  </div>
+  <div id="sys-badge" class="ok">● 確認中</div>
+</div>
+
+<div id="update-bar">
+  <div>最終更新 <span id="last-time">--:--:--</span> <span id="last-ago"></span></div>
+  <div id="progress-wrap">
+    <span>次回</span>
+    <div id="progress-bar"><div id="progress-fill" style="width:100%"></div></div>
+  </div>
+</div>
+
+<div id="bath-list"></div>
+
+<div class="section-label">外気温</div>
+<div id="ambient-card">
+  <div class="amb-item">
+    <div class="lbl">気温</div>
+    <div class="val" id="amb-temp">--.-℃</div>
+  </div>
+  <div class="amb-item" id="amb-hum-wrap" style="display:none">
+    <div class="lbl">湿度</div>
+    <div class="val hum" id="amb-hum">--%</div>
+  </div>
+</div>
+
+<div class="section-label">システム</div>
+<div id="sysinfo-card">
+  <div class="sysinfo-row">
+    <span class="key">データ受信</span>
+    <span class="val" id="si-push">--</span>
+  </div>
+  <div class="sysinfo-row">
+    <span class="key">センサー数</span>
+    <span class="val v-sub" id="si-count">--</span>
+  </div>
+  <div class="sysinfo-row">
+    <span class="key">要確認</span>
+    <span class="val" id="si-stale">--</span>
+  </div>
+</div>
+
+<div id="clock"></div>
+
+<script>
+"use strict";
+
+const REFRESH = 10;
+let tickTimer = null, tickStart = Date.now();
+let lastData = null;
+
+function pad(n){ return String(n).padStart(2,"0"); }
+function fmtTime(iso){
+  if(!iso) return "--:--:--";
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+function agoText(iso){
+  if(!iso) return "";
+  const sec = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if(sec < 60)  return `${sec}秒前`;
+  if(sec < 3600) return `${Math.floor(sec/60)}分前`;
+  return `${Math.floor(sec/3600)}時間前`;
+}
+
+// "37〜40℃" → {lo:37, hi:40}
+function parseTarget(s){
+  if(!s) return null;
+  const m = s.match(/(\d+(?:\.\d+)?)[〜~\-−](\d+(?:\.\d+)?)/);
+  if(m) return { lo: parseFloat(m[1]), hi: parseFloat(m[2]) };
+  return null;
+}
+
+function calcStatus(temp, stale, tgt){
+  if(stale || temp == null)
+    return { key:"off", label:"データなし", diff:null };
+  if(!tgt)
+    return { key:"ok",  label:"取得中 ✓",  diff:null };
+  const over  = temp - tgt.hi;
+  const under = tgt.lo - temp;
+  if(over > 2)  return { key:"hot",  label:"高め ⚠",  diff:`+${over.toFixed(1)}℃` };
+  if(under > 2) return { key:"cold", label:"低め ⚠",  diff:`-${under.toFixed(1)}℃` };
+  if(over > 0)  return { key:"warn", label:"やや高め", diff:`+${over.toFixed(1)}℃` };
+  if(under > 0) return { key:"warn", label:"やや低め", diff:`-${under.toFixed(1)}℃` };
+  return         { key:"ok",   label:"正常 ✓",   diff:null };
+}
+
+function renderBaths(baths){
+  document.getElementById("bath-list").innerHTML = baths.map(b => {
+    const tgt = parseTarget(b.target || "");
+    const st  = calcStatus(b.temp, b.stale, tgt);
+    const hasT = b.temp != null;
+    const tempTxt = hasT ? Number(b.temp).toFixed(1) : "--.-";
+    const unitTxt = hasT ? "℃" : "";
+    const tgtTxt  = b.target || "目標未設定";
+    const ageTxt  = b.at ? agoText(b.at) : "時刻不明";
+    const ageClass = b.stale ? "stale" : "";
+    const diffHtml = st.diff
+      ? `<span class="bath-diff ${st.key==='hot'||st.key==='warn'&&st.diff[0]==='+'?'diff-over':'diff-under'}">${st.diff}</span>`
+      : "";
+
+    return `
+    <div class="bath-card ${st.key}">
+      <div class="bath-inner">
+        <div class="bath-top">
+          <span class="bath-name">${b.name}</span>
+          <span class="status-pill pill-${st.key}">${st.label}</span>
+        </div>
+        <div class="bath-temp-row">
+          <span class="bath-temp ${st.key}">${tempTxt}</span>
+          <span class="bath-unit">${unitTxt}</span>
+          ${diffHtml}
+        </div>
+        <div class="bath-bottom">
+          <span class="bath-target">目標 ${tgtTxt}</span>
+          <span class="bath-age ${ageClass}">${ageTxt}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderAmbient(gw){
+  if(!gw || gw.temp == null){
+    document.getElementById("amb-temp").textContent = "--.-℃";
+    document.getElementById("amb-hum-wrap").style.display = "none";
+    return;
+  }
+  document.getElementById("amb-temp").textContent = Number(gw.temp).toFixed(1) + "℃";
+  if(gw.humidity != null){
+    document.getElementById("amb-hum").textContent = Number(gw.humidity).toFixed(1) + "%";
+    document.getElementById("amb-hum-wrap").style.display = "";
+  }
+}
+
+function renderSystem(data){
+  const baths  = data.baths || [];
+  const online = data.online !== false;
+  const staleN = baths.filter(b => b.stale || b.temp == null).length;
+
+  const badge = document.getElementById("sys-badge");
+  if(!online){
+    badge.textContent = "● 未接続"; badge.className = "ng";
+  } else if(staleN > 0){
+    badge.textContent = "● 要確認"; badge.className = "warn";
+  } else {
+    badge.textContent = "● 正常";   badge.className = "ok";
+  }
+
+  document.getElementById("last-time").textContent = fmtTime(data.last_updated);
+  document.getElementById("last-ago").textContent  = data.last_updated ? `(${agoText(data.last_updated)})` : "";
+
+  document.getElementById("si-push").textContent  = online ? fmtTime(data.last_updated) : "--:--:--";
+  document.getElementById("si-push").className    = "val " + (online ? "v-ok" : "v-ng");
+  document.getElementById("si-count").textContent = baths.length + " 台";
+  document.getElementById("si-stale").textContent = staleN > 0 ? staleN + " 台" : "なし";
+  document.getElementById("si-stale").className   = "val " + (staleN > 0 ? "v-warn" : "v-ok");
+}
+
+function startTick(){
+  clearInterval(tickTimer);
+  tickStart = Date.now();
+  tickTimer = setInterval(() => {
+    const pct = Math.max(0, 100 - (Date.now() - tickStart) / 1000 / REFRESH * 100);
+    document.getElementById("progress-fill").style.width = pct + "%";
+  }, 500);
+}
+
+async function load(){
+  try{
+    const res  = await fetch("/api/baths");
+    const data = await res.json();
+    lastData = data;
+    renderBaths(data.baths || []);
+    renderAmbient(data.gateway);
+    renderSystem(data);
+  } catch {
+    const badge = document.getElementById("sys-badge");
+    badge.textContent = "● 通信エラー"; badge.className = "ng";
+  }
+  startTick();
+}
+
+function updateClock(){
+  const d = new Date();
+  const days = ["日","月","火","水","木","金","土"];
+  document.getElementById("clock").textContent =
+    `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${days[d.getDay()]}）` +
+    ` ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  if(lastData){
+    document.getElementById("last-ago").textContent =
+      lastData.last_updated ? `(${agoText(lastData.last_updated)})` : "";
+    // 各カードの「N分前」も更新
+    document.querySelectorAll(".bath-age[data-at]").forEach(el => {
+      el.textContent = agoText(el.dataset.at);
+    });
+  }
+}
+
+load();
+setInterval(load, REFRESH * 1000);
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+</body>
+</html>
