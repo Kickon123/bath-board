@@ -120,6 +120,10 @@
   .chart-wrap{padding:14px 10px 6px;}
   .chart-label{font-size:.7rem;color:var(--sub);margin-bottom:6px;padding:0 4px;}
   .chart-svg{width:100%;display:block;}
+  .range-btn{flex:1;padding:6px 0;border:1.5px solid var(--border);background:#fff;
+    color:var(--sub);font-size:.78rem;font-weight:600;border-radius:8px;cursor:pointer;
+    transition:all .15s;}
+  .range-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
   /* 凡例（全体グラフ用） */
   #legend-wrap{display:flex;flex-wrap:wrap;gap:8px 14px;padding:6px 14px 10px;}
@@ -212,7 +216,11 @@
     </div>
     <div class="modal-body">
       <div class="chart-wrap">
-        <div class="chart-label">温度推移</div>
+        <div id="bath-range-btns" style="display:flex;gap:6px;margin-bottom:10px;padding:0 4px;">
+          <button class="range-btn active" onclick="setBathRange(this,3)">3時間</button>
+          <button class="range-btn" onclick="setBathRange(this,12)">12時間</button>
+          <button class="range-btn" onclick="setBathRange(this,24)">24時間</button>
+        </div>
         <svg id="bath-chart" class="chart-svg" viewBox="0 0 320 150"></svg>
       </div>
       <div class="hist-section">
@@ -238,7 +246,12 @@
     </div>
     <div class="modal-body">
       <div class="chart-wrap">
-        <div class="chart-label" id="overall-chart-label">直近のデータを表示中</div>
+        <div id="overall-range-btns" style="display:flex;gap:6px;margin-bottom:10px;padding:0 4px;">
+          <button class="range-btn active" onclick="setOverallRange(this,3)">3時間</button>
+          <button class="range-btn" onclick="setOverallRange(this,12)">12時間</button>
+          <button class="range-btn" onclick="setOverallRange(this,24)">24時間</button>
+        </div>
+        <div class="chart-label" id="overall-chart-label"></div>
         <svg id="overall-chart" class="chart-svg" viewBox="0 0 320 180"></svg>
       </div>
       <div id="legend-wrap"></div>
@@ -508,35 +521,29 @@ document.querySelectorAll(".modal-backdrop").forEach(el=>{
   });
 });
 
-// 個別履歴モーダル
-async function openBathModal(bathId){
-  const bath=bathsData.find(b=>b.id===bathId); if(!bath) return;
-  const tgt=parseTarget(bath.target||""), st=calcStatus(bath.temp,bath.stale,tgt);
-  const hasT=bath.temp!=null;
-  document.getElementById("bath-modal-title").textContent=bath.name;
-  document.getElementById("bath-modal-target").textContent=bath.target?`目標 ${bath.target}`:"";
-  const curEl=document.getElementById("bath-modal-current");
-  curEl.textContent=hasT?Number(bath.temp).toFixed(1)+"℃":"-- ℃";
-  curEl.className=`td-${st.key}`;
-  document.getElementById("bath-modal").classList.add("open");
-  document.body.style.overflow="hidden";
+// 時間→件数変換（3分間隔）
+function hoursToN(h){ return Math.ceil(h*60/3); }
 
-  document.getElementById("bath-no-data").style.display="none";
-  document.getElementById("bath-hist-table").style.display="";
-  document.getElementById("bath-hist-tbody").innerHTML=
-    `<tr><td colspan="3" style="color:var(--sub);text-align:center;padding:16px">読み込み中...</td></tr>`;
+// ── 個別履歴モーダル ──────────────────────────────
+let _bathModalId=null, _bathModalTgt=null;
+
+async function loadBathChart(hours){
+  const bathId=_bathModalId, tgt=_bathModalTgt;
+  const n=hoursToN(hours);
   document.getElementById("bath-chart").innerHTML="";
-
+  document.getElementById("bath-hist-tbody").innerHTML=
+    `<tr><td colspan="3" style="color:var(--sub);text-align:center;padding:12px">読み込み中...</td></tr>`;
   try{
-    const res=await fetch(`/api/history?id=${bathId}&n=100`), rows=await res.json();
+    const res=await fetch(`/api/history?id=${bathId}&n=${n}`), rows=await res.json();
     if(!rows.length){
       document.getElementById("bath-no-data").style.display="";
       document.getElementById("bath-hist-table").style.display="none";
       return;
     }
-    drawSingleChart(document.getElementById("bath-chart"), rows, tgt, bathColor(bathId));
-    const tbody=document.getElementById("bath-hist-tbody");
-    tbody.innerHTML=[...rows].reverse().map(r=>{
+    document.getElementById("bath-no-data").style.display="none";
+    document.getElementById("bath-hist-table").style.display="";
+    drawSingleChart(document.getElementById("bath-chart"), rows, null, bathColor(bathId));
+    document.getElementById("bath-hist-tbody").innerHTML=[...rows].reverse().map(r=>{
       const st2=calcStatus(r.temp,r.stale,tgt);
       return `<tr>
         <td>${fmtShort(r.at)}</td>
@@ -550,28 +557,63 @@ async function openBathModal(bathId){
   }
 }
 
-// 全体グラフモーダル
-async function openOverallModal(){
-  document.getElementById("overall-modal").classList.add("open");
+function setBathRange(btn, hours){
+  document.querySelectorAll("#bath-range-btns .range-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  loadBathChart(hours);
+}
+
+async function openBathModal(bathId){
+  const bath=bathsData.find(b=>b.id===bathId); if(!bath) return;
+  const tgt=parseTarget(bath.target||""), st=calcStatus(bath.temp,bath.stale,tgt);
+  _bathModalId=bathId; _bathModalTgt=tgt;
+  document.getElementById("bath-modal-title").textContent=bath.name;
+  document.getElementById("bath-modal-target").textContent=bath.target?`目標 ${bath.target}`:"";
+  const curEl=document.getElementById("bath-modal-current");
+  curEl.textContent=bath.temp!=null?Number(bath.temp).toFixed(1)+"℃":"-- ℃";
+  curEl.className=`td-${st.key}`;
+  // ボタンを3時間にリセット
+  document.querySelectorAll("#bath-range-btns .range-btn").forEach((b,i)=>b.classList.toggle("active",i===0));
+  document.getElementById("bath-modal").classList.add("open");
   document.body.style.overflow="hidden";
-  document.getElementById("overall-no-data").style.display="none";
+  loadBathChart(3);
+}
+
+// ── 全体グラフモーダル ────────────────────────────
+async function loadOverallChart(hours){
+  const n=hoursToN(hours)*7; // 湯舟数分
   document.getElementById("overall-chart").innerHTML="";
   document.getElementById("legend-wrap").innerHTML="";
   document.getElementById("overall-chart-label").textContent="読み込み中...";
-
   try{
-    const res=await fetch("/api/history/all?n=300"), rows=await res.json();
+    const res=await fetch(`/api/history/all?n=${n}`), rows=await res.json();
     if(!rows.length){
       document.getElementById("overall-no-data").style.display="";
       document.getElementById("overall-chart-label").textContent="データがありません";
       return;
     }
+    document.getElementById("overall-no-data").style.display="none";
     const from=fmtShort(rows[0].at), to=fmtShort(rows[rows.length-1].at);
     document.getElementById("overall-chart-label").textContent=`${from} 〜 ${to}`;
     drawOverallChart(document.getElementById("overall-chart"), rows);
   }catch{
     document.getElementById("overall-chart-label").textContent="取得失敗";
   }
+}
+
+function setOverallRange(btn, hours){
+  document.querySelectorAll("#overall-range-btns .range-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  loadOverallChart(hours);
+}
+
+async function openOverallModal(){
+  document.getElementById("overall-modal").classList.add("open");
+  document.body.style.overflow="hidden";
+  document.getElementById("overall-no-data").style.display="none";
+  // ボタンを3時間にリセット
+  document.querySelectorAll("#overall-range-btns .range-btn").forEach((b,i)=>b.classList.toggle("active",i===0));
+  loadOverallChart(3);
 }
 
 load();
