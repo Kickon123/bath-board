@@ -4,7 +4,7 @@
 役割:
   - スマホ(adb_reader)が温度を取得するたびに POST /api/push でここへ送信
   - 最新値を latest.json に保持
-  - 履歴を history.json に蓄積（最大 600 件 ≒ 約 30 時間）
+  - 履歴を Supabase (PostgreSQL) に永続保存
   - 別モニターのブラウザは GET / （案内板HTML）を開き、5秒ごとに /api/baths を読む
 
 ローカル試験:   python3 cloud_server.py    → http://<このPCのIP>:8000/
@@ -14,32 +14,111 @@ import json
 import os
 from collections import deque
 from pathlib import Path
+
+import requests as req
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-BASE_DIR     = Path(__file__).parent
-STORE        = BASE_DIR / "latest.json"
-HISTORY_FILE = BASE_DIR / "history.json"
-HISTORY_MAX  = 600  # 3分間隔で約30時間分
+BASE_DIR = Path(__file__).parent
+STORE    = BASE_DIR / "latest.json"
 
-# なりすまし防止の共有トークン。実値はコードに書かず、環境変数 PUSH_TOKEN で必ず設定する
-# （会社のシークレット管理から注入）。スマホ側 config.json の cloud.token と一致させること。
-# 未設定時は安全側に倒して全 push を拒否する。
-SECRET = os.environ.get("PUSH_TOKEN")
+SECRET    = os.environ.get("PUSH_TOKEN")
+SUPA_URL  = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPA_KEY  = os.environ.get("SUPABASE_KEY", "")
 
-# 起動時に既存の履歴を読み込む
+# Supabase 未設定時のフォールバック用（メモリ内履歴）
+HISTORY_MAX = 600
 _history: deque = deque(maxlen=HISTORY_MAX)
-if HISTORY_FILE.exists():
+
+
+# ── Supabase ヘルパー ───────────────────────────────
+def _supa_ok():
+    return bool(SUPA_URL and SUPA_KEY)
+
+def _supa_headers():
+    return {
+        "apikey":        SUPA_KEY,
+        "Authorization": f"Bearer {SUPA_KEY}",
+        "Content-Type":  "application/json",
+    }
+
+def supa_insert(push_data):
+    if not _supa_ok():
+        return
+    ts   = push_data.get("last_updated")
+    rows = [
+        {
+            "recorded_at": ts,
+            "bath_id":     b["id"],
+            "bath_name":   b.get("name"),
+            "temp":        b.get("temp"),
+            "stale":       b.get("stale", False),
+        }
+        for b in push_data.get("baths", [])
+        if b.get("temp") is not None
+    ]
+    if not rows:
+        return
     try:
-        saved = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-        _history.extend(saved[-HISTORY_MAX:])
+        req.post(
+            f"{SUPA_URL}/rest/v1/temperatures",
+            headers={**_supa_headers(), "Prefer": "return=minimal"},
+            json=rows,
+            timeout=5,
+        )
     except Exception:
         pass
 
+def supa_query_bath(bath_id, n=100):
+    """指定湯舟の過去データを古い順で返す。"""
+    if not _supa_ok():
+        return None
+    try:
+        res = req.get(
+            f"{SUPA_URL}/rest/v1/temperatures",
+            headers=_supa_headers(),
+            params={
+                "bath_id": f"eq.{bath_id}",
+                "order":   "recorded_at.desc",
+                "limit":   n,
+                "select":  "recorded_at,temp,stale",
+            },
+            timeout=5,
+        )
+        rows = res.json()
+        # 古い順に並べ直して at キーに統一
+        return [{"at": r["recorded_at"], "temp": r["temp"], "stale": r["stale"]}
+                for r in reversed(rows)]
+    except Exception:
+        return None
 
+def supa_query_all(n=300):
+    """全湯舟の過去データを古い順で返す。"""
+    if not _supa_ok():
+        return None
+    try:
+        res = req.get(
+            f"{SUPA_URL}/rest/v1/temperatures",
+            headers=_supa_headers(),
+            params={
+                "order":  "recorded_at.desc",
+                "limit":  n,
+                "select": "recorded_at,bath_id,bath_name,temp,stale",
+            },
+            timeout=5,
+        )
+        rows = res.json()
+        return [{"at": r["recorded_at"], "bath_id": r["bath_id"],
+                 "bath_name": r["bath_name"], "temp": r["temp"], "stale": r["stale"]}
+                for r in reversed(rows)]
+    except Exception:
+        return None
+
+
+# ── エンドポイント ──────────────────────────────────
 @app.post("/api/push")
 def api_push():
     if not SECRET or request.headers.get("X-Token") != SECRET:
@@ -48,9 +127,8 @@ def api_push():
     if data is None:
         return jsonify(error="no json"), 400
     STORE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    # 履歴に追記
+    supa_insert(data)
     _history.append(data)
-    HISTORY_FILE.write_text(json.dumps(list(_history), ensure_ascii=False), encoding="utf-8")
     return jsonify(ok=True)
 
 
@@ -65,12 +143,19 @@ def api_baths():
 @app.get("/api/history")
 def api_history():
     """
-    指定した湯舟IDの過去データを返す（古い順）。
+    指定湯舟の過去データ（古い順）。
     GET /api/history?id=1&n=100
     """
     bath_id = request.args.get("id", type=int)
     n       = request.args.get("n", 100, type=int)
 
+    # Supabase から取得
+    if _supa_ok() and bath_id is not None:
+        result = supa_query_bath(bath_id, n)
+        if result is not None:
+            return jsonify(result)
+
+    # フォールバック：メモリ内履歴
     result = []
     for snap in list(_history):
         ts = snap.get("last_updated")
@@ -79,66 +164,71 @@ def api_history():
         if bath_id is not None:
             bath = next((b for b in snap.get("baths", []) if b.get("id") == bath_id), None)
             if bath:
-                result.append({
-                    "at":    ts,
-                    "temp":  bath.get("temp"),
-                    "stale": bath.get("stale", False),
-                })
+                result.append({"at": ts, "temp": bath.get("temp"), "stale": bath.get("stale", False)})
         else:
-            result.append({
-                "at":    ts,
-                "baths": [{"id": b["id"], "temp": b.get("temp"), "stale": b.get("stale", False)}
-                          for b in snap.get("baths", [])],
-            })
-
-    # 最新 n 件を古い順で返す
+            result.append({"at": ts, "baths": snap.get("baths", [])})
     return jsonify(result[-n:])
+
+
+@app.get("/api/history/all")
+def api_history_all():
+    """
+    全湯舟の過去データ（古い順）。全体グラフ用。
+    GET /api/history/all?n=300
+    """
+    n = request.args.get("n", 300, type=int)
+
+    if _supa_ok():
+        result = supa_query_all(n)
+        if result is not None:
+            return jsonify(result)
+
+    # フォールバック：メモリ内履歴を展開
+    result = []
+    for snap in list(_history)[-n:]:
+        ts = snap.get("last_updated")
+        for b in snap.get("baths", []):
+            result.append({
+                "at": ts, "bath_id": b.get("id"), "bath_name": b.get("name"),
+                "temp": b.get("temp"), "stale": b.get("stale", False),
+            })
+    return jsonify(result)
 
 
 @app.get("/")
 @app.get("/slideshow")
 def slideshow():
-    # スライドショー案内板 7:3（左:温度マップ(base7-flat) / 右:案内画像）
     return send_from_directory("static", "slideshow.html")
-
 
 @app.get("/slideshow64")
 @app.get("/64")
 def slideshow64():
-    # スライドショー案内板 6:4 版（右の案内画像を拡大）
     return send_from_directory("static", "slideshow64.html")
-
 
 @app.get("/base7")
 @app.get("/board")
 def board():
     return send_from_directory("static", "base7-flat.html")
 
-
 @app.get("/base-all")
 @app.get("/all")
 def board_all():
     return send_from_directory("static", "base-all.html")
 
-
 @app.get("/bath/yubatake")
 def bath_yubatake():
     return send_from_directory("static", "base7-flat.html")
-
 
 @app.get("/bath/daiyokujo")
 def bath_daiyokujo():
     return send_from_directory("static", "daiyokujo.html")
 
-
 @app.get("/bath/all")
 def bath_all():
     return send_from_directory("static", "base-all.html")
 
-
 @app.get("/staff")
 def staff():
-    # 従業員向けステータスモニター（スマホ縦画面）
     return send_from_directory("static", "staff.html")
 
 

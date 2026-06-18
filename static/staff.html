@@ -16,18 +16,13 @@
     min-height:100dvh;padding-bottom:env(safe-area-inset-bottom,16px);}
 
   /* ── ヘッダー ── */
-  #header{
-    position:sticky;top:0;z-index:20;
-    background:var(--bg);padding:14px 16px 12px;
-    border-bottom:1px solid var(--border);
-    display:flex;align-items:center;justify-content:space-between;
-  }
+  #header{position:sticky;top:0;z-index:20;background:var(--bg);
+    padding:14px 16px 12px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;}
   #header-left h1{font-size:1.05rem;font-weight:700;letter-spacing:.04em;}
   #header-left .sub{font-size:.72rem;color:var(--sub);margin-top:2px;}
-  #sys-badge{
-    display:flex;align-items:center;gap:5px;
-    font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:999px;transition:all .4s;
-  }
+  #sys-badge{display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:700;
+    padding:6px 12px;border-radius:999px;transition:all .4s;}
   #sys-badge.ok  {background:#dcfce7;color:var(--ok); border:1.5px solid #86efac;}
   #sys-badge.warn{background:#fef3c7;color:var(--warn);border:1.5px solid #fcd34d;}
   #sys-badge.ng  {background:#fee2e2;color:var(--ng); border:1.5px solid #fca5a5;
@@ -35,133 +30,115 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
   /* ── 更新バー ── */
-  #update-bar{
-    padding:8px 16px;display:flex;align-items:center;justify-content:space-between;
-    font-size:.72rem;color:var(--sub);border-bottom:1px solid var(--border);
-  }
+  #update-bar{padding:8px 16px;display:flex;align-items:center;justify-content:space-between;
+    font-size:.72rem;color:var(--sub);border-bottom:1px solid var(--border);}
   #last-time{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;}
   #progress-wrap{display:flex;align-items:center;gap:6px;font-size:.68rem;}
   #progress-bar{width:56px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
   #progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 1s linear;}
 
-  /* ── 湯舟カード ── */
-  #bath-list{padding:12px 12px 4px;}
-  .bath-card{
-    border-radius:14px;margin-bottom:10px;
-    background:var(--card);border:1px solid var(--border);border-left-width:5px;
-    overflow:hidden;cursor:pointer;transition:opacity .15s;
+  /* ── 全体グラフボタン ── */
+  #overall-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    margin:12px 12px 4px;padding:12px;
+    background:var(--card);border:1.5px solid var(--border);border-radius:12px;
+    font-size:.88rem;font-weight:700;color:var(--accent);cursor:pointer;
+    transition:background .15s;
   }
+  #overall-btn:active{background:#eef2ff;}
+
+  /* ── 湯舟カード ── */
+  #bath-list{padding:8px 12px 4px;}
+  .bath-card{border-radius:14px;margin-bottom:10px;background:var(--card);
+    border:1px solid var(--border);border-left-width:5px;overflow:hidden;
+    cursor:pointer;transition:opacity .15s;}
   .bath-card:active{opacity:.75;}
   .bath-card.ok  {border-left-color:var(--ok);}
   .bath-card.warn{border-left-color:var(--warn);}
   .bath-card.hot {border-left-color:var(--hot);}
   .bath-card.cold{border-left-color:var(--cold);}
   .bath-card.off {border-left-color:var(--off);}
-
   .bath-inner{padding:14px 16px 12px;}
   .bath-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .bath-name{font-size:1.05rem;font-weight:700;letter-spacing:.03em;}
-  .bath-hint{font-size:.65rem;color:var(--sub);margin-top:1px;}
-
+  .bath-hint{font-size:.62rem;color:var(--sub);margin-top:1px;}
   .status-pill{font-size:.72rem;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap;}
   .pill-ok  {background:#dcfce7;color:var(--ok);}
   .pill-warn{background:#fef3c7;color:var(--warn);}
   .pill-hot {background:#ffedd5;color:var(--hot);}
   .pill-cold{background:#e0f2fe;color:var(--cold);}
-  .pill-off {background:#f1f5f9;color:var(--off);}
-
+  .pill-off {background:#f1f5f9; color:var(--off);}
   .bath-temp-row{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;}
   .bath-temp{font-size:3.8rem;font-weight:800;line-height:1;
     font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
-  .bath-temp.ok  {color:var(--ok);}
-  .bath-temp.warn{color:var(--warn);}
-  .bath-temp.hot {color:var(--hot);}
-  .bath-temp.cold{color:var(--cold);}
+  .bath-temp.ok  {color:var(--ok);}  .bath-temp.warn{color:var(--warn);}
+  .bath-temp.hot {color:var(--hot);} .bath-temp.cold{color:var(--cold);}
   .bath-temp.off {color:var(--off);}
   .bath-unit{font-size:1.4rem;font-weight:500;color:var(--sub);}
   .bath-diff{font-size:.85rem;font-weight:600;padding:2px 7px;border-radius:6px;align-self:center;}
   .diff-over {background:#ffedd5;color:var(--hot);}
   .diff-under{background:#e0f2fe;color:var(--cold);}
-
   .bath-bottom{display:flex;align-items:center;justify-content:space-between;}
   .bath-target{font-size:.76rem;color:var(--sub);}
   .bath-age{font-size:.72rem;color:var(--sub);font-variant-numeric:tabular-nums;}
   .bath-age.stale{color:var(--warn);}
 
   /* ── 外気温・システム ── */
-  .section-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;color:var(--sub);padding:8px 16px 4px;}
-  #ambient-card,#sysinfo-card{
-    margin:0 12px 10px;padding:14px 16px;
-    background:var(--card);border:1px solid var(--border);border-radius:14px;
-  }
+  .section-label{font-size:.65rem;font-weight:700;letter-spacing:.12em;
+    color:var(--sub);padding:8px 16px 4px;}
+  #ambient-card,#sysinfo-card{margin:0 12px 10px;padding:14px 16px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;}
   #ambient-card{display:flex;align-items:center;gap:20px;}
   .amb-item .lbl{font-size:.72rem;color:var(--sub);margin-bottom:2px;}
   .amb-item .val{font-size:1.8rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
-  .amb-item .val.hum{font-size:1.4rem;color:#7dd3fc;}
+  .amb-item .val.hum{font-size:1.4rem;color:#0284c7;}
   .sysinfo-row{display:flex;justify-content:space-between;align-items:center;
     padding:7px 0;font-size:.82rem;border-bottom:1px solid var(--border);}
   .sysinfo-row:last-child{border-bottom:none;}
   .sysinfo-row .key{color:var(--sub);}
   .sysinfo-row .val{font-weight:700;font-variant-numeric:tabular-nums;}
   .v-ok{color:var(--ok);} .v-warn{color:var(--warn);} .v-ng{color:var(--ng);} .v-sub{color:var(--sub);}
-
   #clock{text-align:center;padding:10px 0 6px;font-size:.72rem;color:var(--sub);font-variant-numeric:tabular-nums;}
 
-  /* ── 履歴モーダル ── */
-  #modal{
-    display:none;position:fixed;inset:0;z-index:100;
-    flex-direction:column;justify-content:flex-end;
-  }
-  #modal.open{display:flex;}
-  #modal-backdrop{
-    position:absolute;inset:0;background:rgba(0,0,0,.6);
-  }
-  #modal-sheet{
-    position:relative;z-index:1;
-    background:#ffffff;border-radius:20px 20px 0 0;
-    max-height:88dvh;display:flex;flex-direction:column;
-    border-top:1px solid var(--border);
-    animation:slideUp .22s ease-out;
-  }
+  /* ── モーダル共通 ── */
+  .modal{display:none;position:fixed;inset:0;z-index:100;flex-direction:column;justify-content:flex-end;}
+  .modal.open{display:flex;}
+  .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+  .modal-sheet{position:relative;z-index:1;background:#fff;border-radius:20px 20px 0 0;
+    max-height:90dvh;display:flex;flex-direction:column;
+    border-top:1px solid var(--border);animation:slideUp .22s ease-out;}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-
-  #modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0;}
-  #modal-header{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 18px 10px;border-bottom:1px solid var(--border);flex-shrink:0;
-  }
-  #modal-title{font-size:1.1rem;font-weight:700;}
-  #modal-current{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
-  #modal-close{
-    background:#f1f5f9;border:none;color:var(--text);
-    width:30px;height:30px;border-radius:50%;font-size:.9rem;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-  }
-
-  #modal-body{overflow-y:auto;flex:1;padding:0 0 16px;}
+  .modal-handle{width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:10px auto 0;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .modal-title{font-size:1.1rem;font-weight:700;}
+  .modal-close{background:#f1f5f9;border:none;color:var(--text);width:30px;height:30px;
+    border-radius:50%;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .modal-body{overflow-y:auto;flex:1;padding-bottom:16px;}
 
   /* チャート */
-  #chart-wrap{padding:16px 12px 8px;}
-  #chart-title{font-size:.7rem;color:var(--sub);margin-bottom:8px;padding:0 4px;}
-  #modal-chart{width:100%;display:block;}
+  .chart-wrap{padding:14px 10px 6px;}
+  .chart-label{font-size:.7rem;color:var(--sub);margin-bottom:6px;padding:0 4px;}
+  .chart-svg{width:100%;display:block;}
+
+  /* 凡例（全体グラフ用） */
+  #legend-wrap{display:flex;flex-wrap:wrap;gap:8px 14px;padding:6px 14px 10px;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--text);}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 
   /* 履歴テーブル */
-  #hist-table-wrap{padding:0 12px;}
-  #hist-table-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;
+  .hist-section{padding:0 12px;}
+  .hist-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;
     color:var(--sub);padding:6px 4px 4px;}
-  #hist-table{width:100%;border-collapse:collapse;font-size:.8rem;}
-  #hist-table th{color:var(--sub);font-weight:600;text-align:left;
+  .hist-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+  .hist-table th{color:var(--sub);font-weight:600;text-align:left;
     padding:5px 8px;border-bottom:1px solid var(--border);}
-  #hist-table td{padding:7px 8px;border-bottom:1px solid rgba(35,38,53,.6);
-    font-variant-numeric:tabular-nums;}
-  #hist-table tr:last-child td{border-bottom:none;}
-  .td-ok  {color:var(--ok);}
-  .td-warn{color:var(--warn);}
-  .td-hot {color:var(--hot);}
-  .td-cold{color:var(--cold);}
+  .hist-table td{padding:7px 8px;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums;}
+  .hist-table tr:last-child td{border-bottom:none;}
+  .td-ok  {color:var(--ok);}  .td-hot {color:var(--hot);}
+  .td-cold{color:var(--cold);}.td-warn{color:var(--warn);}
   .td-off {color:var(--off);}
-
-  #no-history{padding:32px;text-align:center;color:var(--sub);font-size:.85rem;}
+  .no-data{padding:28px;text-align:center;color:var(--sub);font-size:.85rem;}
 </style>
 </head>
 <body>
@@ -180,6 +157,10 @@
     <span>次回</span>
     <div id="progress-bar"><div id="progress-fill" style="width:100%"></div></div>
   </div>
+</div>
+
+<div id="overall-btn" onclick="openOverallModal()">
+  📈 全体グラフを見る
 </div>
 
 <div id="bath-list"></div>
@@ -214,29 +195,54 @@
 
 <div id="clock"></div>
 
-<!-- 履歴モーダル -->
-<div id="modal">
-  <div id="modal-backdrop"></div>
-  <div id="modal-sheet">
-    <div id="modal-handle"></div>
-    <div id="modal-header">
-      <span id="modal-title">--</span>
-      <span id="modal-current"></span>
-      <button id="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div id="modal-body">
-      <div id="chart-wrap">
-        <div id="chart-title">過去の温度推移</div>
-        <svg id="modal-chart" viewBox="0 0 320 150"></svg>
+<!-- 個別履歴モーダル -->
+<div id="bath-modal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="bath-modal-title">--</div>
+        <div style="font-size:.75rem;color:var(--sub);margin-top:2px" id="bath-modal-target"></div>
       </div>
-      <div id="hist-table-wrap">
-        <div id="hist-table-label">履歴（新しい順）</div>
-        <div id="no-history" style="display:none">データがまだありません</div>
-        <table id="hist-table">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="bath-modal-current" style="font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;"></span>
+        <button class="modal-close" onclick="closeModal('bath-modal')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="chart-wrap">
+        <div class="chart-label">温度推移</div>
+        <svg id="bath-chart" class="chart-svg" viewBox="0 0 320 150"></svg>
+      </div>
+      <div class="hist-section">
+        <div class="hist-label">履歴（新しい順）</div>
+        <div id="bath-no-data" class="no-data" style="display:none">データがまだありません</div>
+        <table class="hist-table" id="bath-hist-table">
           <thead><tr><th>時刻</th><th>温度</th><th>状態</th></tr></thead>
-          <tbody id="hist-tbody"></tbody>
+          <tbody id="bath-hist-tbody"></tbody>
         </table>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 全体グラフモーダル -->
+<div id="overall-modal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">全湯舟 温度推移</div>
+      <button class="modal-close" onclick="closeModal('overall-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="chart-wrap">
+        <div class="chart-label" id="overall-chart-label">直近のデータを表示中</div>
+        <svg id="overall-chart" class="chart-svg" viewBox="0 0 320 180"></svg>
+      </div>
+      <div id="legend-wrap"></div>
+      <div id="overall-no-data" class="no-data" style="display:none">データがまだありません</div>
     </div>
   </div>
 </div>
@@ -246,80 +252,67 @@
 
 const REFRESH = 10;
 let tickTimer = null, tickStart = Date.now();
-let lastData  = null;
-let bathsData = [];
+let lastData  = null, bathsData = [];
+
+// 湯舟ごとの色（全体グラフ用）
+const BATH_COLORS = {
+  1: "#ef4444", 2: "#f97316", 3: "#3b82f6",
+  5: "#8b5cf6", 6: "#22c55e", 20: "#06b6d4", 21: "#ec4899",
+};
+function bathColor(id){ return BATH_COLORS[id] || "#94a3b8"; }
 
 function pad(n){ return String(n).padStart(2,"0"); }
-
 function fmtTime(iso){
   if(!iso) return "--:--:--";
-  const d = new Date(iso);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const d=new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
-function fmtTimeShort(iso){
+function fmtShort(iso){
   if(!iso) return "--";
-  const d = new Date(iso);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const d=new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function agoText(iso){
   if(!iso) return "";
-  const sec = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if(sec < 60)   return `${sec}秒前`;
-  if(sec < 3600) return `${Math.floor(sec/60)}分前`;
-  return `${Math.floor(sec/3600)}時間前`;
+  const s=Math.floor((Date.now()-new Date(iso))/1000);
+  if(s<60) return `${s}秒前`; if(s<3600) return `${Math.floor(s/60)}分前`;
+  return `${Math.floor(s/3600)}時間前`;
 }
-
 function parseTarget(s){
   if(!s) return null;
-  const m = s.match(/(\d+(?:\.\d+)?)[〜~\-−](\d+(?:\.\d+)?)/);
-  if(m) return { lo: parseFloat(m[1]), hi: parseFloat(m[2]) };
-  return null;
+  const m=s.match(/(\d+(?:\.\d+)?)[〜~\-−](\d+(?:\.\d+)?)/);
+  return m ? {lo:parseFloat(m[1]),hi:parseFloat(m[2])} : null;
+}
+function calcStatus(temp,stale,tgt){
+  if(stale||temp==null) return {key:"off",label:"データなし"};
+  if(!tgt)              return {key:"ok", label:"取得中 ✓"};
+  const over=temp-tgt.hi, under=tgt.lo-temp;
+  if(over >2) return {key:"hot", label:"高め ⚠",  diff:`+${over.toFixed(1)}℃`};
+  if(under>2) return {key:"cold",label:"低め ⚠",  diff:`-${under.toFixed(1)}℃`};
+  if(over >0) return {key:"warn",label:"やや高め", diff:`+${over.toFixed(1)}℃`};
+  if(under>0) return {key:"warn",label:"やや低め", diff:`-${under.toFixed(1)}℃`};
+  return            {key:"ok",  label:"正常 ✓"};
 }
 
-function calcStatus(temp, stale, tgt){
-  if(stale || temp == null)
-    return { key:"off",  label:"データなし" };
-  if(!tgt)
-    return { key:"ok",   label:"取得中 ✓" };
-  const over  = temp - tgt.hi;
-  const under = tgt.lo - temp;
-  if(over  > 2) return { key:"hot",  label:"高め ⚠",  diff:`+${over.toFixed(1)}℃` };
-  if(under > 2) return { key:"cold", label:"低め ⚠",  diff:`-${under.toFixed(1)}℃` };
-  if(over  > 0) return { key:"warn", label:"やや高め", diff:`+${over.toFixed(1)}℃` };
-  if(under > 0) return { key:"warn", label:"やや低め", diff:`-${under.toFixed(1)}℃` };
-  return         { key:"ok",   label:"正常 ✓" };
-}
-
-// ── 描画 ────────────────────────────────────────────
+// ── 湯舟カード描画 ────────────────────────────────
 function renderBaths(baths){
   bathsData = baths;
   document.getElementById("bath-list").innerHTML = baths.map(b => {
-    const tgt = parseTarget(b.target || "");
-    const st  = calcStatus(b.temp, b.stale, tgt);
-    const hasT = b.temp != null;
-    const tempTxt = hasT ? Number(b.temp).toFixed(1) : "--.-";
-    const ageTxt  = b.at ? agoText(b.at) : "時刻不明";
-    const diffHtml = st.diff
-      ? `<span class="bath-diff ${st.key==='hot'||st.diff?.[0]==='+'?'diff-over':'diff-under'}">${st.diff}</span>`
-      : "";
+    const tgt=parseTarget(b.target||""), st=calcStatus(b.temp,b.stale,tgt);
+    const hasT=b.temp!=null;
+    const diffHtml=st.diff?`<span class="bath-diff ${st.diff[0]==='+'?'diff-over':'diff-under'}">${st.diff}</span>`:"";
     return `
-    <div class="bath-card ${st.key}" onclick="openModal(${b.id})">
+    <div class="bath-card ${st.key}" onclick="openBathModal(${b.id})">
       <div class="bath-inner">
         <div class="bath-top">
-          <div>
-            <div class="bath-name">${b.name}</div>
-            <div class="bath-hint">タップで履歴</div>
-          </div>
+          <div><div class="bath-name">${b.name}</div><div class="bath-hint">タップで履歴・グラフ</div></div>
           <span class="status-pill pill-${st.key}">${st.label}</span>
         </div>
         <div class="bath-temp-row">
-          <span class="bath-temp ${st.key}">${tempTxt}</span>
-          <span class="bath-unit">${hasT?"℃":""}</span>
-          ${diffHtml}
+          <span class="bath-temp ${st.key}">${hasT?Number(b.temp).toFixed(1):"--.-"}</span>
+          <span class="bath-unit">${hasT?"℃":""}</span>${diffHtml}
         </div>
         <div class="bath-bottom">
           <span class="bath-target">目標 ${b.target||"未設定"}</span>
-          <span class="bath-age${b.stale?" stale":""}">${ageTxt}</span>
+          <span class="bath-age${b.stale?" stale":""}">${b.at?agoText(b.at):"時刻不明"}</span>
         </div>
       </div>
     </div>`;
@@ -327,204 +320,248 @@ function renderBaths(baths){
 }
 
 function renderAmbient(gw){
-  if(!gw || gw.temp == null){
-    document.getElementById("amb-temp").textContent = "--.-℃";
-    document.getElementById("amb-hum-wrap").style.display = "none";
-    return;
-  }
-  document.getElementById("amb-temp").textContent = Number(gw.temp).toFixed(1) + "℃";
-  if(gw.humidity != null){
-    document.getElementById("amb-hum").textContent = Number(gw.humidity).toFixed(1) + "%";
-    document.getElementById("amb-hum-wrap").style.display = "";
+  if(!gw||gw.temp==null){document.getElementById("amb-temp").textContent="--.-℃";
+    document.getElementById("amb-hum-wrap").style.display="none"; return;}
+  document.getElementById("amb-temp").textContent=Number(gw.temp).toFixed(1)+"℃";
+  if(gw.humidity!=null){
+    document.getElementById("amb-hum").textContent=Number(gw.humidity).toFixed(1)+"%";
+    document.getElementById("amb-hum-wrap").style.display="";
   }
 }
 
 function renderSystem(data){
-  const baths  = data.baths || [];
-  const online = data.online !== false;
-  const staleN = baths.filter(b => b.stale || b.temp == null).length;
-  const badge  = document.getElementById("sys-badge");
-  if(!online)       { badge.textContent="● 未接続"; badge.className="ng"; }
-  else if(staleN>0) { badge.textContent="● 要確認"; badge.className="warn"; }
-  else              { badge.textContent="● 正常";   badge.className="ok"; }
-  document.getElementById("last-time").textContent = fmtTime(data.last_updated);
-  document.getElementById("last-ago").textContent  = data.last_updated?`(${agoText(data.last_updated)})`:"";
-  document.getElementById("si-push").textContent   = online ? fmtTime(data.last_updated) : "--:--:--";
-  document.getElementById("si-push").className     = "val " + (online?"v-ok":"v-ng");
-  document.getElementById("si-count").textContent  = baths.length + " 台";
-  document.getElementById("si-stale").textContent  = staleN>0 ? staleN+" 台" : "なし";
-  document.getElementById("si-stale").className    = "val " + (staleN>0?"v-warn":"v-ok");
+  const baths=data.baths||[], online=data.online!==false;
+  const staleN=baths.filter(b=>b.stale||b.temp==null).length;
+  const badge=document.getElementById("sys-badge");
+  if(!online)       {badge.textContent="● 未接続";badge.className="ng";}
+  else if(staleN>0) {badge.textContent="● 要確認";badge.className="warn";}
+  else              {badge.textContent="● 正常";  badge.className="ok";}
+  document.getElementById("last-time").textContent=fmtTime(data.last_updated);
+  document.getElementById("last-ago").textContent=data.last_updated?`(${agoText(data.last_updated)})`:"";
+  document.getElementById("si-push").textContent=online?fmtTime(data.last_updated):"--:--:--";
+  document.getElementById("si-push").className="val "+(online?"v-ok":"v-ng");
+  document.getElementById("si-count").textContent=baths.length+" 台";
+  document.getElementById("si-stale").textContent=staleN>0?staleN+" 台":"なし";
+  document.getElementById("si-stale").className="val "+(staleN>0?"v-warn":"v-ok");
 }
 
-// ── 更新チック ───────────────────────────────────────
+// ── チックバー ────────────────────────────────────
 function startTick(){
-  clearInterval(tickTimer);
-  tickStart = Date.now();
-  tickTimer = setInterval(()=>{
-    const pct = Math.max(0,100-(Date.now()-tickStart)/1000/REFRESH*100);
-    document.getElementById("progress-fill").style.width = pct+"%";
+  clearInterval(tickTimer); tickStart=Date.now();
+  tickTimer=setInterval(()=>{
+    const pct=Math.max(0,100-(Date.now()-tickStart)/1000/REFRESH*100);
+    document.getElementById("progress-fill").style.width=pct+"%";
   },500);
 }
 
 async function load(){
   try{
-    const res  = await fetch("/api/baths");
-    const data = await res.json();
-    lastData = data;
-    renderBaths(data.baths||[]);
-    renderAmbient(data.gateway);
-    renderSystem(data);
-  } catch {
+    const res=await fetch("/api/baths"), data=await res.json();
+    lastData=data; renderBaths(data.baths||[]); renderAmbient(data.gateway); renderSystem(data);
+  }catch{
     document.getElementById("sys-badge").textContent="● 通信エラー";
     document.getElementById("sys-badge").className="ng";
   }
   startTick();
 }
 
-// ── 時計 ─────────────────────────────────────────────
+// ── 時計 ─────────────────────────────────────────
 function updateClock(){
-  const d=new Date(), days=["日","月","火","水","木","金","土"];
+  const d=new Date(),days=["日","月","火","水","木","金","土"];
   document.getElementById("clock").textContent=
     `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${days[d.getDay()]}） ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   if(lastData) document.getElementById("last-ago").textContent=
     lastData.last_updated?`(${agoText(lastData.last_updated)})`:"";
 }
 
-// ── SVGチャート ──────────────────────────────────────
-function drawChart(points, target){
-  const svg = document.getElementById("modal-chart");
-  const W=320, H=150;
-  const PAD={t:20,r:14,b:28,l:40};
+// ── SVGチャート（単一湯舟）────────────────────────
+function drawSingleChart(svgEl, points, target, color="#4f46e5"){
+  const W=320,H=150,PAD={t:22,r:14,b:28,l:40};
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
+  const temps=points.map(p=>p.temp).filter(t=>t!=null);
+  if(!temps.length){svgEl.innerHTML="";return;}
 
-  const temps = points.map(p=>p.temp).filter(t=>t!=null);
-  if(temps.length===0){ svg.innerHTML=""; return; }
+  const margin=Math.max(2,(Math.max(...temps)-Math.min(...temps))*.3||2);
+  const tlo=target?Math.min(Math.min(...temps),target.lo):Math.min(...temps);
+  const thi=target?Math.max(Math.max(...temps),target.hi):Math.max(...temps);
+  const yMin=Math.floor(tlo-margin), yMax=Math.ceil(thi+margin);
+  const yR=yMax-yMin||1;
+  const tx=i=>PAD.l+(i/(points.length-1||1))*cw;
+  const ty=t=>PAD.t+(1-(t-yMin)/yR)*ch;
 
-  const rawMin = Math.min(...temps);
-  const rawMax = Math.max(...temps);
-  const margin = Math.max(2, (rawMax-rawMin)*0.3);
-  const tlo = target ? Math.min(rawMin, target.lo) : rawMin;
-  const thi = target ? Math.max(rawMax, target.hi) : rawMax;
-  const yMin = Math.floor(tlo - margin);
-  const yMax = Math.ceil (thi + margin);
-  const yRange = yMax - yMin || 1;
-
-  const tx = i  => PAD.l + (i/(points.length-1||1))*cw;
-  const ty = t  => PAD.t + (1-(t-yMin)/yRange)*ch;
-
-  let html="";
-
-  // 目標範囲の帯
+  let h="";
   if(target){
-    const ry1=ty(target.hi), ry2=ty(target.lo);
-    html+=`<rect x="${PAD.l}" y="${ry1}" width="${cw}" height="${ry2-ry1}"
-      fill="rgba(34,197,94,.1)" stroke="rgba(34,197,94,.25)" stroke-width=".8"/>`;
-    html+=`<text x="${PAD.l+3}" y="${ry1-3}" fill="rgba(34,197,94,.6)" font-size="8">目標上限 ${target.hi}℃</text>`;
-    html+=`<text x="${PAD.l+3}" y="${ry2+9}" fill="rgba(34,197,94,.6)" font-size="8">目標下限 ${target.lo}℃</text>`;
+    const ry1=ty(target.hi),ry2=ty(target.lo);
+    h+=`<rect x="${PAD.l}" y="${ry1}" width="${cw}" height="${ry2-ry1}" fill="rgba(22,163,74,.1)" stroke="rgba(22,163,74,.3)" stroke-width=".8"/>`;
+    h+=`<text x="${PAD.l+3}" y="${ry1-3}" fill="rgba(22,163,74,.7)" font-size="8">上限 ${target.hi}℃</text>`;
+    h+=`<text x="${PAD.l+3}" y="${ry2+9}" fill="rgba(22,163,74,.7)" font-size="8">下限 ${target.lo}℃</text>`;
   }
-
-  // 横グリッド
-  const step = Math.max(1, Math.round(yRange/4));
-  for(let t=Math.ceil(yMin); t<=yMax; t+=step){
+  const step=Math.max(1,Math.round(yR/4));
+  for(let t=Math.ceil(yMin);t<=yMax;t+=step){
     const y=ty(t);
-    html+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}"
-      stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
-    html+=`<text x="${PAD.l-3}" y="${y+4}" text-anchor="end"
-      fill="#94a3b8" font-size="9">${t}</text>`;
+    h+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
+    h+=`<text x="${PAD.l-3}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${t}</text>`;
   }
-
-  // ライン
-  const validPts = points.map((p,i)=>p.temp!=null?`${tx(i)},${ty(p.temp)}`:null).filter(Boolean);
-  if(validPts.length>1)
-    html+=`<polyline points="${validPts.join(" ")}"
-      fill="none" stroke="#818cf8" stroke-width="2"
-      stroke-linejoin="round" stroke-linecap="round"/>`;
-
-  // ドット + 最新値ラベル
+  const pts=points.map((p,i)=>p.temp!=null?`${tx(i)},${ty(p.temp)}`:null).filter(Boolean);
+  if(pts.length>1)
+    h+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
   points.forEach((p,i)=>{
-    if(p.temp==null) return;
-    const cx=tx(i), cy=ty(p.temp);
-    const isLast = i===points.length-1;
-    html+=`<circle cx="${cx}" cy="${cy}" r="${isLast?5:2.5}"
-      fill="${isLast?"#f1f5f9":"#818cf8"}"
-      stroke="${isLast?"#818cf8":"none"}" stroke-width="2"/>`;
-    if(isLast)
-      html+=`<text x="${cx}" y="${cy-9}" text-anchor="middle"
-        fill="#f1f5f9" font-size="10" font-weight="700">${p.temp.toFixed(1)}℃</text>`;
+    if(p.temp==null)return;
+    const cx=tx(i),cy=ty(p.temp),last=i===points.length-1;
+    h+=`<circle cx="${cx}" cy="${cy}" r="${last?5:2.5}" fill="${last?"#fff":color}" stroke="${color}" stroke-width="${last?2:0}"/>`;
+    if(last) h+=`<text x="${cx}" y="${cy-9}" text-anchor="middle" fill="${color}" font-size="10" font-weight="700">${p.temp.toFixed(1)}℃</text>`;
   });
-
-  // X軸時刻ラベル（最大5個）
-  const step2 = Math.max(1, Math.floor(points.length/4));
+  const step2=Math.max(1,Math.floor(points.length/4));
   points.forEach((p,i)=>{
-    if(i%step2!==0 && i!==points.length-1) return;
-    html+=`<text x="${tx(i)}" y="${H-4}" text-anchor="middle"
-      fill="#94a3b8" font-size="8">${fmtTimeShort(p.at)}</text>`;
+    if(i%step2!==0&&i!==points.length-1)return;
+    h+=`<text x="${tx(i)}" y="${H-4}" text-anchor="middle" fill="#94a3b8" font-size="8">${fmtShort(p.at)}</text>`;
   });
-
-  svg.innerHTML = html;
+  svgEl.innerHTML=h;
 }
 
-// ── 履歴モーダル ─────────────────────────────────────
-async function openModal(bathId){
-  const bath = bathsData.find(b=>b.id===bathId);
-  if(!bath) return;
+// ── SVGチャート（全湯舟）─────────────────────────
+function drawOverallChart(svgEl, allData){
+  const W=320,H=180,PAD={t:22,r:14,b:28,l:40};
+  const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
 
-  const tgt = parseTarget(bath.target||"");
-  const st  = calcStatus(bath.temp, bath.stale, tgt);
-  const hasT = bath.temp != null;
+  // 湯舟ごとにグループ化
+  const groups={};
+  for(const r of allData){
+    if(r.temp==null||r.stale) continue;
+    if(!groups[r.bath_id]) groups[r.bath_id]={name:r.bath_name,pts:[]};
+    groups[r.bath_id].pts.push({at:r.at,temp:r.temp});
+  }
+  const ids=Object.keys(groups);
+  if(!ids.length){svgEl.innerHTML="";return;}
 
-  document.getElementById("modal-title").textContent   = bath.name;
-  document.getElementById("modal-current").textContent =
-    hasT ? Number(bath.temp).toFixed(1)+"℃" : "-- ℃";
-  document.getElementById("modal-current").className   =
-    `td-${st.key}`;
-  document.getElementById("modal").classList.add("open");
-  document.body.style.overflow = "hidden";
+  // 全データの時刻軸を統一
+  const allTimes=[...new Set(allData.map(r=>r.at))].sort();
+  const timeIdx=Object.fromEntries(allTimes.map((t,i)=>[t,i]));
+  const n=allTimes.length;
 
-  // 履歴を取得
-  document.getElementById("no-history").style.display  = "none";
-  document.getElementById("hist-table").style.display  = "";
-  document.getElementById("hist-tbody").innerHTML =
+  const allTemps=Object.values(groups).flatMap(g=>g.pts.map(p=>p.temp));
+  const yMin=Math.floor(Math.min(...allTemps)-1);
+  const yMax=Math.ceil(Math.max(...allTemps)+1);
+  const yR=yMax-yMin||1;
+  const tx=i=>PAD.l+(i/(n-1||1))*cw;
+  const ty=t=>PAD.t+(1-(t-yMin)/yR)*ch;
+
+  let h="";
+  const step=Math.max(1,Math.round(yR/4));
+  for(let t=Math.ceil(yMin);t<=yMax;t+=step){
+    const y=ty(t);
+    h+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
+    h+=`<text x="${PAD.l-3}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${t}</text>`;
+  }
+
+  for(const id of ids){
+    const g=groups[id], c=bathColor(Number(id));
+    const pts=g.pts.map(p=>{const xi=timeIdx[p.at];return xi!==undefined?`${tx(xi)},${ty(p.temp)}`:null;}).filter(Boolean);
+    if(pts.length>1)
+      h+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>`;
+    if(g.pts.length){
+      const last=g.pts[g.pts.length-1];
+      const xi=timeIdx[last.at];
+      if(xi!==undefined){
+        h+=`<circle cx="${tx(xi)}" cy="${ty(last.temp)}" r="4" fill="#fff" stroke="${c}" stroke-width="2"/>`;
+        h+=`<text x="${tx(xi)}" y="${ty(last.temp)-8}" text-anchor="middle" fill="${c}" font-size="9" font-weight="700">${last.temp.toFixed(1)}</text>`;
+      }
+    }
+  }
+
+  // X軸ラベル
+  const step2=Math.max(1,Math.floor(n/4));
+  allTimes.forEach((t,i)=>{
+    if(i%step2!==0&&i!==n-1)return;
+    h+=`<text x="${tx(i)}" y="${H-4}" text-anchor="middle" fill="#94a3b8" font-size="8">${fmtShort(t)}</text>`;
+  });
+  svgEl.innerHTML=h;
+
+  // 凡例
+  const legendEl=document.getElementById("legend-wrap");
+  legendEl.innerHTML=ids.map(id=>{
+    const c=bathColor(Number(id));
+    return `<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${groups[id].name}</div>`;
+  }).join("");
+}
+
+// ── モーダル制御 ──────────────────────────────────
+function closeModal(id){
+  document.getElementById(id).classList.remove("open");
+  document.body.style.overflow="";
+}
+document.querySelectorAll(".modal-backdrop").forEach(el=>{
+  el.addEventListener("click",()=>{
+    document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));
+    document.body.style.overflow="";
+  });
+});
+
+// 個別履歴モーダル
+async function openBathModal(bathId){
+  const bath=bathsData.find(b=>b.id===bathId); if(!bath) return;
+  const tgt=parseTarget(bath.target||""), st=calcStatus(bath.temp,bath.stale,tgt);
+  const hasT=bath.temp!=null;
+  document.getElementById("bath-modal-title").textContent=bath.name;
+  document.getElementById("bath-modal-target").textContent=bath.target?`目標 ${bath.target}`:"";
+  const curEl=document.getElementById("bath-modal-current");
+  curEl.textContent=hasT?Number(bath.temp).toFixed(1)+"℃":"-- ℃";
+  curEl.className=`td-${st.key}`;
+  document.getElementById("bath-modal").classList.add("open");
+  document.body.style.overflow="hidden";
+
+  document.getElementById("bath-no-data").style.display="none";
+  document.getElementById("bath-hist-table").style.display="";
+  document.getElementById("bath-hist-tbody").innerHTML=
     `<tr><td colspan="3" style="color:var(--sub);text-align:center;padding:16px">読み込み中...</td></tr>`;
-  document.getElementById("modal-chart").innerHTML = "";
+  document.getElementById("bath-chart").innerHTML="";
 
   try{
-    const res  = await fetch(`/api/history?id=${bathId}&n=100`);
-    const rows = await res.json();
-
-    if(rows.length===0){
-      document.getElementById("no-history").style.display  = "";
-      document.getElementById("hist-table").style.display  = "none";
-      document.getElementById("modal-chart").innerHTML = "";
+    const res=await fetch(`/api/history?id=${bathId}&n=100`), rows=await res.json();
+    if(!rows.length){
+      document.getElementById("bath-no-data").style.display="";
+      document.getElementById("bath-hist-table").style.display="none";
       return;
     }
-
-    // チャート（古い順で渡す）
-    drawChart(rows, tgt);
-
-    // テーブル（新しい順）
-    const tbody = document.getElementById("hist-tbody");
-    tbody.innerHTML = [...rows].reverse().map(r=>{
-      const st2 = calcStatus(r.temp, r.stale, tgt);
-      const cls = `td-${st2.key}`;
+    drawSingleChart(document.getElementById("bath-chart"), rows, tgt, bathColor(bathId));
+    const tbody=document.getElementById("bath-hist-tbody");
+    tbody.innerHTML=[...rows].reverse().map(r=>{
+      const st2=calcStatus(r.temp,r.stale,tgt);
       return `<tr>
-        <td>${fmtTimeShort(r.at)}</td>
-        <td class="${cls}" style="font-weight:600">${r.temp!=null?Number(r.temp).toFixed(1)+"℃":"--"}</td>
-        <td class="${cls}">${st2.label}</td>
+        <td>${fmtShort(r.at)}</td>
+        <td class="td-${st2.key}" style="font-weight:600">${r.temp!=null?Number(r.temp).toFixed(1)+"℃":"--"}</td>
+        <td class="td-${st2.key}">${st2.label}</td>
       </tr>`;
     }).join("");
-  } catch {
-    document.getElementById("hist-tbody").innerHTML =
+  }catch{
+    document.getElementById("bath-hist-tbody").innerHTML=
       `<tr><td colspan="3" style="color:var(--ng);text-align:center;padding:16px">取得失敗</td></tr>`;
   }
 }
 
-function closeModal(){
-  document.getElementById("modal").classList.remove("open");
-  document.body.style.overflow = "";
-}
+// 全体グラフモーダル
+async function openOverallModal(){
+  document.getElementById("overall-modal").classList.add("open");
+  document.body.style.overflow="hidden";
+  document.getElementById("overall-no-data").style.display="none";
+  document.getElementById("overall-chart").innerHTML="";
+  document.getElementById("legend-wrap").innerHTML="";
+  document.getElementById("overall-chart-label").textContent="読み込み中...";
 
-document.getElementById("modal-backdrop").addEventListener("click", closeModal);
+  try{
+    const res=await fetch("/api/history/all?n=300"), rows=await res.json();
+    if(!rows.length){
+      document.getElementById("overall-no-data").style.display="";
+      document.getElementById("overall-chart-label").textContent="データがありません";
+      return;
+    }
+    const from=fmtShort(rows[0].at), to=fmtShort(rows[rows.length-1].at);
+    document.getElementById("overall-chart-label").textContent=`${from} 〜 ${to}`;
+    drawOverallChart(document.getElementById("overall-chart"), rows);
+  }catch{
+    document.getElementById("overall-chart-label").textContent="取得失敗";
+  }
+}
 
 load();
 setInterval(load, REFRESH*1000);
