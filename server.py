@@ -68,6 +68,7 @@ def bath_daiyokujo():
 def bath_all():
     return send_from_directory("static", "base-all.html")
 
+
 @app.route("/api/baths")
 def api_baths():
     cfg   = load_config()
