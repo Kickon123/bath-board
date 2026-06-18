@@ -48,7 +48,10 @@ def _supa_headers():
 def supa_insert(push_data):
     if not _supa_ok():
         return
-    ts   = push_data.get("last_updated")
+    ts = push_data.get("last_updated") or ""
+    # タイムゾーン情報がない場合はJST(+09:00)として扱う
+    if ts and "+" not in ts and "Z" not in ts:
+        ts = ts + "+09:00"
     rows = [
         {
             "recorded_at": ts,
