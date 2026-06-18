@@ -191,10 +191,6 @@
     <span class="key">センサー数</span>
     <span class="val v-sub" id="si-count">--</span>
   </div>
-  <div class="sysinfo-row">
-    <span class="key">要確認</span>
-    <span class="val" id="si-stale">--</span>
-  </div>
 </div>
 
 <div id="clock"></div>
@@ -337,18 +333,14 @@ function renderAmbient(gw){
 
 function renderSystem(data){
   const baths=data.baths||[], online=data.online!==false;
-  const staleN=baths.filter(b=>b.stale||b.temp==null).length;
   const badge=document.getElementById("sys-badge");
-  if(!online)       {badge.textContent="● 未接続";badge.className="ng";}
-  else if(staleN>0) {badge.textContent="● 要確認";badge.className="warn";}
-  else              {badge.textContent="● 正常";  badge.className="ok";}
+  if(!online) {badge.textContent="● 未接続";badge.className="ng";}
+  else        {badge.textContent="● 正常";  badge.className="ok";}
   document.getElementById("last-time").textContent=fmtTime(data.last_updated);
   document.getElementById("last-ago").textContent=data.last_updated?`(${agoText(data.last_updated)})`:"";
   document.getElementById("si-push").textContent=online?fmtTime(data.last_updated):"--:--:--";
   document.getElementById("si-push").className="val "+(online?"v-ok":"v-ng");
   document.getElementById("si-count").textContent=baths.length+" 台";
-  document.getElementById("si-stale").textContent=staleN>0?staleN+" 台":"なし";
-  document.getElementById("si-stale").className="val "+(staleN>0?"v-warn":"v-ok");
 }
 
 // ── チックバー ────────────────────────────────────
@@ -573,22 +565,25 @@ async function openBathModal(bathId){
 }
 
 // ── 全体グラフモーダル ────────────────────────────
+const OVERALL_BATH_KEYS = ["高め","ぬるめ","低め"];
+
 async function loadOverallChart(hours){
-  const n=hoursToN(hours)*7; // 湯舟数分
+  const n=hoursToN(hours)*3;
   document.getElementById("overall-chart").innerHTML="";
   document.getElementById("legend-wrap").innerHTML="";
   document.getElementById("overall-chart-label").textContent="読み込み中...";
   try{
     const res=await fetch(`/api/history/all?n=${n}`), rows=await res.json();
-    if(!rows.length){
+    const filtered=rows.filter(r=>OVERALL_BATH_KEYS.some(k=>r.bath_name&&r.bath_name.includes(k)));
+    if(!filtered.length){
       document.getElementById("overall-no-data").style.display="";
       document.getElementById("overall-chart-label").textContent="データがありません";
       return;
     }
     document.getElementById("overall-no-data").style.display="none";
-    const from=fmtShort(rows[0].at), to=fmtShort(rows[rows.length-1].at);
+    const from=fmtShort(filtered[0].at), to=fmtShort(filtered[filtered.length-1].at);
     document.getElementById("overall-chart-label").textContent=`${from} 〜 ${to}`;
-    drawOverallChart(document.getElementById("overall-chart"), rows);
+    drawOverallChart(document.getElementById("overall-chart"), filtered);
   }catch{
     document.getElementById("overall-chart-label").textContent="取得失敗";
   }
