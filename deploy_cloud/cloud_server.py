@@ -16,7 +16,7 @@ from collections import deque
 from pathlib import Path
 
 import requests as req
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect, make_response
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder="static")
@@ -25,9 +25,10 @@ CORS(app)
 BASE_DIR = Path(__file__).parent
 STORE    = BASE_DIR / "latest.json"
 
-SECRET    = os.environ.get("PUSH_TOKEN")
-SUPA_URL  = os.environ.get("SUPABASE_URL", "").rstrip("/")
-SUPA_KEY  = os.environ.get("SUPABASE_KEY", "")
+SECRET     = os.environ.get("PUSH_TOKEN")
+SUPA_URL   = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPA_KEY   = os.environ.get("SUPABASE_KEY", "")
+STAFF_PIN  = os.environ.get("STAFF_PIN", "")
 
 # Supabase 未設定時のフォールバック用（メモリ内履歴）
 HISTORY_MAX = 600
@@ -230,9 +231,47 @@ def bath_daiyokujo():
 def bath_all():
     return send_from_directory("static", "base-all.html")
 
+_LOGIN_HTML = """<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>スタッフ認証</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+body{{font-family:sans-serif;display:flex;align-items:center;justify-content:center;
+  min-height:100dvh;background:#f4f6f9;}}
+.box{{background:#fff;padding:36px 28px;border-radius:16px;
+  box-shadow:0 2px 16px rgba(0,0,0,.08);text-align:center;width:280px;}}
+h2{{font-size:1rem;font-weight:700;color:#1e293b;margin-bottom:24px;}}
+input{{width:100%;padding:14px;font-size:1.5rem;border:1.5px solid #e2e8f0;
+  border-radius:10px;text-align:center;letter-spacing:.3em;outline:none;}}
+input:focus{{border-color:#3b82f6;}}
+button{{margin-top:14px;width:100%;padding:13px;background:#3b82f6;color:#fff;
+  border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;}}
+.err{{color:#ef4444;font-size:.82rem;margin-top:10px;min-height:1.2em;}}
+</style></head>
+<body><div class="box">
+<h2>スタッフ専用</h2>
+<form method="post" action="/staff-login">
+<input type="password" name="pin" placeholder="PIN" autofocus inputmode="numeric">
+<button type="submit">ログイン</button>
+</form>
+<div class="err">{err}</div>
+</div></body></html>"""
+
 @app.get("/staff")
 def staff():
+    if STAFF_PIN and request.cookies.get("staff_auth") != STAFF_PIN:
+        return _LOGIN_HTML.format(err=""), 401
     return send_from_directory("static", "staff.html")
+
+@app.post("/staff-login")
+def staff_login():
+    if request.form.get("pin", "") == STAFF_PIN:
+        resp = make_response(redirect("/staff"))
+        resp.set_cookie("staff_auth", STAFF_PIN, max_age=60*60*24*30,
+                        httponly=True, samesite="Lax")
+        return resp
+    return _LOGIN_HTML.format(err="PINが違います"), 401
 
 
 if __name__ == "__main__":
