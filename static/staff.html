@@ -143,6 +143,15 @@
   .td-cold{color:var(--cold);}.td-warn{color:var(--warn);}
   .td-off {color:var(--off);}
   .no-data{padding:28px;text-align:center;color:var(--sub);font-size:.85rem;}
+
+  /* ── タイムスライダー ── */
+  #slider-section{margin:6px 12px 10px;background:var(--card);
+    border:1px solid var(--border);border-radius:10px;padding:10px 14px 12px;}
+  #slider-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  #slider-label{font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;}
+  #slider-range-btns{display:flex;gap:6px;}
+  #slider-range-btns .range-btn{padding:4px 12px;font-size:.72rem;flex:none;}
+  #time-slider{width:100%;accent-color:var(--accent);cursor:pointer;height:20px;}
 </style>
 </head>
 <body>
@@ -168,6 +177,17 @@
 </div>
 
 <div id="bath-list"></div>
+
+<div id="slider-section">
+  <div id="slider-top">
+    <div id="slider-range-btns">
+      <button class="range-btn active" onclick="setSliderRange(this,3)">3時間</button>
+      <button class="range-btn" onclick="setSliderRange(this,24)">24時間</button>
+    </div>
+    <span id="slider-label" style="color:var(--ok)">● ライブ</span>
+  </div>
+  <input type="range" id="time-slider" min="0" max="0" value="0">
+</div>
 
 <div class="section-label">外気温</div>
 <div id="ambient-card">
@@ -214,7 +234,6 @@
       <div class="chart-wrap">
         <div id="bath-range-btns" style="display:flex;gap:6px;margin-bottom:10px;padding:0 4px;">
           <button class="range-btn active" onclick="setBathRange(this,3)">3時間</button>
-          <button class="range-btn" onclick="setBathRange(this,12)">12時間</button>
           <button class="range-btn" onclick="setBathRange(this,24)">24時間</button>
         </div>
         <svg id="bath-chart" class="chart-svg" viewBox="0 0 320 150"></svg>
@@ -244,7 +263,6 @@
       <div class="chart-wrap">
         <div id="overall-range-btns" style="display:flex;gap:6px;margin-bottom:10px;padding:0 4px;">
           <button class="range-btn active" onclick="setOverallRange(this,3)">3時間</button>
-          <button class="range-btn" onclick="setOverallRange(this,12)">12時間</button>
           <button class="range-btn" onclick="setOverallRange(this,24)">24時間</button>
         </div>
         <div class="chart-label" id="overall-chart-label"></div>
@@ -297,7 +315,6 @@ function calcStatus(temp,stale){
 
 // ── 湯舟カード描画 ────────────────────────────────
 function renderBaths(baths){
-  bathsData = baths;
   document.getElementById("bath-list").innerHTML = baths.map(b => {
     const st=calcStatus(b.temp,b.stale);
     const hasT=b.temp!=null;
@@ -355,7 +372,9 @@ function startTick(){
 async function load(){
   try{
     const res=await fetch("/api/baths"), data=await res.json();
-    lastData=data; renderBaths(data.baths||[]); renderAmbient(data.gateway); renderSystem(data);
+    lastData=data; bathsData=data.baths||[];
+    if(_isLive) renderBaths(bathsData);
+    renderAmbient(data.gateway); renderSystem(data);
   }catch{
     document.getElementById("sys-badge").textContent="● 通信エラー";
     document.getElementById("sys-badge").className="ng";
@@ -604,8 +623,62 @@ async function openOverallModal(){
   loadOverallChart(3);
 }
 
+// ── タイムスライダー ──────────────────────────────
+let sliderSnaps = [], sliderHours = 3, _isLive = true;
+
+async function loadSliderData(hours){
+  sliderHours = hours;
+  try{
+    const n = hoursToN(hours) * 7;
+    const res = await fetch(`/api/history/all?n=${n}`);
+    const rows = await res.json();
+    const byTime = {};
+    rows.forEach(r => {
+      if(!byTime[r.at]) byTime[r.at] = {at:r.at, baths:{}};
+      byTime[r.at].baths[r.bath_id] = {temp:r.temp, stale:r.stale};
+    });
+    sliderSnaps = Object.values(byTime).sort((a,b)=>a.at.localeCompare(b.at));
+    const slider = document.getElementById("time-slider");
+    slider.max = Math.max(0, sliderSnaps.length - 1);
+    if(_isLive){ slider.value = slider.max; setSliderLabel(true); }
+  }catch{}
+}
+
+function applySnapshot(idx){
+  if(!sliderSnaps.length || !bathsData.length) return;
+  const snap = sliderSnaps[Math.max(0, Math.min(idx, sliderSnaps.length-1))];
+  const merged = bathsData.map(b => {
+    const h = snap.baths[b.id];
+    return h ? {...b, temp:h.temp, stale:h.stale, at:snap.at}
+             : {...b, temp:null, stale:true, at:snap.at};
+  });
+  renderBaths(merged);
+  setSliderLabel(false, snap.at);
+}
+
+function setSliderLabel(live, at){
+  const el = document.getElementById("slider-label");
+  if(live){ el.textContent="● ライブ"; el.style.color="var(--ok)"; }
+  else    { el.textContent=fmtShort(at); el.style.color="var(--accent)"; }
+}
+
+function setSliderRange(btn, hours){
+  document.querySelectorAll("#slider-range-btns .range-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  _isLive = true;
+  loadSliderData(hours);
+}
+
+document.getElementById("time-slider").addEventListener("input", function(){
+  const atMax = parseInt(this.value) >= parseInt(this.max);
+  if(atMax){ _isLive=true; renderBaths(bathsData); setSliderLabel(true); }
+  else     { _isLive=false; applySnapshot(parseInt(this.value)); }
+});
+
 load();
+loadSliderData(3);
 setInterval(load, REFRESH*1000);
+setInterval(()=>{ if(_isLive) loadSliderData(sliderHours); }, 3*60*1000);
 setInterval(updateClock, 1000);
 updateClock();
 </script>
