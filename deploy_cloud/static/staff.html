@@ -144,14 +144,11 @@
   .td-off {color:var(--off);}
   .no-data{padding:28px;text-align:center;color:var(--sub);font-size:.85rem;}
 
-  /* ── タイムスライダー ── */
-  #slider-section{margin:6px 12px 10px;background:var(--card);
-    border:1px solid var(--border);border-radius:10px;padding:10px 14px 12px;}
-  #slider-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  #slider-label{font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;}
-  #slider-range-btns{display:flex;gap:6px;}
-  #slider-range-btns .range-btn{padding:4px 12px;font-size:.72rem;flex:none;}
-  #time-slider{width:100%;accent-color:var(--accent);cursor:pointer;height:20px;}
+  /* ── チャートスクラバー ── */
+  #bath-scrubber-wrap{padding:4px 10px 8px;}
+  #bath-scrubber-info{text-align:center;font-size:.8rem;font-weight:700;color:var(--accent);
+    font-variant-numeric:tabular-nums;min-height:1.4em;margin-bottom:4px;}
+  #bath-scrubber{width:100%;accent-color:var(--accent);cursor:pointer;}
 </style>
 </head>
 <body>
@@ -177,17 +174,6 @@
 </div>
 
 <div id="bath-list"></div>
-
-<div id="slider-section">
-  <div id="slider-top">
-    <div id="slider-range-btns">
-      <button class="range-btn active" onclick="setSliderRange(this,3)">3時間</button>
-      <button class="range-btn" onclick="setSliderRange(this,24)">24時間</button>
-    </div>
-    <span id="slider-label" style="color:var(--ok)">● ライブ</span>
-  </div>
-  <input type="range" id="time-slider" min="0" max="0" value="0">
-</div>
 
 <div class="section-label">外気温</div>
 <div id="ambient-card">
@@ -237,6 +223,10 @@
           <button class="range-btn" onclick="setBathRange(this,24)">24時間</button>
         </div>
         <svg id="bath-chart" class="chart-svg" viewBox="0 0 320 150"></svg>
+        <div id="bath-scrubber-wrap">
+          <div id="bath-scrubber-info"></div>
+          <input type="range" id="bath-scrubber" min="0" max="0" value="0">
+        </div>
       </div>
       <div class="hist-section">
         <div class="hist-label">履歴（新しい順）</div>
@@ -373,7 +363,7 @@ async function load(){
   try{
     const res=await fetch("/api/baths"), data=await res.json();
     lastData=data; bathsData=data.baths||[];
-    if(_isLive) renderBaths(bathsData);
+    renderBaths(bathsData);
     renderAmbient(data.gateway); renderSystem(data);
   }catch{
     document.getElementById("sys-badge").textContent="● 通信エラー";
@@ -546,7 +536,12 @@ async function loadBathChart(hours){
     }
     document.getElementById("bath-no-data").style.display="none";
     document.getElementById("bath-hist-table").style.display="";
+    _bathChartData = rows;
     drawSingleChart(document.getElementById("bath-chart"), rows, null, bathColor(bathId));
+    // スクラバー初期化（最新=右端）
+    const sc = document.getElementById("bath-scrubber");
+    sc.max = rows.length - 1; sc.value = rows.length - 1;
+    updateBathCursor(rows.length - 1);
     document.getElementById("bath-hist-tbody").innerHTML=[...rows].reverse().map(r=>{
       const st2=calcStatus(r.temp,r.stale);
       return `<tr>
@@ -623,62 +618,32 @@ async function openOverallModal(){
   loadOverallChart(3);
 }
 
-// ── タイムスライダー ──────────────────────────────
-let sliderSnaps = [], sliderHours = 3, _isLive = true;
+// ── チャートスクラバー ────────────────────────────
+let _bathChartData = [];
 
-async function loadSliderData(hours){
-  sliderHours = hours;
-  try{
-    const n = hoursToN(hours) * 7;
-    const res = await fetch(`/api/history/all?n=${n}`);
-    const rows = await res.json();
-    const byTime = {};
-    rows.forEach(r => {
-      if(!byTime[r.at]) byTime[r.at] = {at:r.at, baths:{}};
-      byTime[r.at].baths[r.bath_id] = {temp:r.temp, stale:r.stale};
-    });
-    sliderSnaps = Object.values(byTime).sort((a,b)=>a.at.localeCompare(b.at));
-    const slider = document.getElementById("time-slider");
-    slider.max = Math.max(0, sliderSnaps.length - 1);
-    if(_isLive){ slider.value = slider.max; setSliderLabel(true); }
-  }catch{}
+function updateBathCursor(idx){
+  if(!_bathChartData.length) return;
+  const r = _bathChartData[Math.max(0, Math.min(idx, _bathChartData.length-1))];
+  const info = document.getElementById("bath-scrubber-info");
+  info.textContent = r.temp!=null ? `${fmtShort(r.at)}  ${Number(r.temp).toFixed(1)}℃` : `${fmtShort(r.at)}  --℃`;
+  // カーソル線をSVGに描画
+  const svg = document.getElementById("bath-chart");
+  const n=_bathChartData.length, W=320, H=150, PAD={t:18,r:14,b:22,l:38};
+  const x = PAD.l + (idx/(n-1||1))*(W-PAD.l-PAD.r);
+  let cur = svg.querySelector(".cursor-line");
+  if(!cur){ cur=document.createElementNS("http://www.w3.org/2000/svg","line"); cur.classList.add("cursor-line"); svg.appendChild(cur); }
+  cur.setAttribute("x1",x); cur.setAttribute("y1",PAD.t);
+  cur.setAttribute("x2",x); cur.setAttribute("y2",H-PAD.b);
+  cur.setAttribute("stroke","var(--accent)"); cur.setAttribute("stroke-width","1.5");
+  cur.setAttribute("stroke-dasharray","3,2");
 }
 
-function applySnapshot(idx){
-  if(!sliderSnaps.length || !bathsData.length) return;
-  const snap = sliderSnaps[Math.max(0, Math.min(idx, sliderSnaps.length-1))];
-  const merged = bathsData.map(b => {
-    const h = snap.baths[b.id];
-    return h ? {...b, temp:h.temp, stale:h.stale, at:snap.at}
-             : {...b, temp:null, stale:true, at:snap.at};
-  });
-  renderBaths(merged);
-  setSliderLabel(false, snap.at);
-}
-
-function setSliderLabel(live, at){
-  const el = document.getElementById("slider-label");
-  if(live){ el.textContent="● ライブ"; el.style.color="var(--ok)"; }
-  else    { el.textContent=fmtShort(at); el.style.color="var(--accent)"; }
-}
-
-function setSliderRange(btn, hours){
-  document.querySelectorAll("#slider-range-btns .range-btn").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  _isLive = true;
-  loadSliderData(hours);
-}
-
-document.getElementById("time-slider").addEventListener("input", function(){
-  const atMax = parseInt(this.value) >= parseInt(this.max);
-  if(atMax){ _isLive=true; renderBaths(bathsData); setSliderLabel(true); }
-  else     { _isLive=false; applySnapshot(parseInt(this.value)); }
+document.getElementById("bath-scrubber").addEventListener("input", function(){
+  updateBathCursor(parseInt(this.value));
 });
 
 load();
-loadSliderData(3);
 setInterval(load, REFRESH*1000);
-setInterval(()=>{ if(_isLive) loadSliderData(sliderHours); }, 3*60*1000);
 setInterval(updateClock, 1000);
 updateClock();
 </script>
