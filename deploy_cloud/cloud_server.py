@@ -208,7 +208,7 @@ def slideshow():
 def slideshow64():
     return send_from_directory("static", "slideshow64.html")
 
-@app.get("/base7")
+@app.get("/yubatake")
 @app.get("/board")
 def board():
     return send_from_directory("static", "base7-flat.html")

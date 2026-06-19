@@ -47,8 +47,8 @@ def slideshow():
 def slideshow64():
     return send_from_directory("static", "slideshow64.html")
 
-@app.route("/base7")
-def base7():
+@app.route("/yubatake")
+def yubatake():
     return send_from_directory("static", "base7-flat.html")
 
 @app.route("/base-all")
