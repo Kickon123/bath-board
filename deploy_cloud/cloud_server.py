@@ -230,6 +230,10 @@ def bath_daiyokujo():
 def bath_all():
     return send_from_directory("static", "base-all.html")
 
+@app.get("/kanri")
+def kanri():
+    return send_from_directory("static", "staff.html")
+
 
 
 if __name__ == "__main__":

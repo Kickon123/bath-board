@@ -69,6 +69,10 @@ def bath_all():
     return send_from_directory("static", "base-all.html")
 
 
+@app.route("/kanri")
+def kanri():
+    return send_from_directory("static", "staff.html")
+
 @app.route("/api/baths")
 def api_baths():
     cfg   = load_config()
