@@ -144,6 +144,14 @@
   .td-off {color:var(--off);}
   .no-data{padding:28px;text-align:center;color:var(--sub);font-size:.85rem;}
 
+  /* ── スクロール式チャート ── */
+  .chart-scroll-row{display:flex;align-items:stretch;}
+  .chart-axis{flex:0 0 42px;width:42px;height:150px;}
+  .chart-scroll{flex:1;overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;touch-action:pan-x;}
+  .chart-svg-scroll{display:block;height:150px;}
+  .chart-scroll-hint{font-size:.65rem;color:var(--sub);text-align:center;margin-top:2px;}
+
   /* ── チャートスクラバー ── */
   #bath-scrubber-wrap{padding:4px 10px 8px;}
   #bath-scrubber-info{text-align:center;font-size:.8rem;font-weight:700;color:var(--accent);
@@ -222,7 +230,13 @@
           <button class="range-btn active" onclick="setBathRange(this,3)">3時間</button>
           <button class="range-btn" onclick="setBathRange(this,24)">24時間</button>
         </div>
-        <svg id="bath-chart" class="chart-svg" viewBox="0 0 320 150"></svg>
+        <div class="chart-scroll-row">
+          <svg id="bath-chart-axis" class="chart-axis" viewBox="0 0 42 150"></svg>
+          <div id="bath-chart-scroll" class="chart-scroll">
+            <svg id="bath-chart" class="chart-svg-scroll"></svg>
+          </div>
+        </div>
+        <div class="chart-scroll-hint">← 左にスクロールで過去のデータ</div>
         <div id="bath-scrubber-wrap">
           <div id="bath-scrubber-info"></div>
           <input type="range" id="bath-scrubber" min="0" max="0" value="0">
@@ -286,6 +300,11 @@ function fmtTime(iso){
 function fmtShort(iso){
   if(!iso) return "--";
   const d=new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fmtDateTime(iso){
+  if(!iso) return "--";
+  const d=new Date(iso);
+  return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function agoText(iso){
   if(!iso) return "";
@@ -400,43 +419,65 @@ function calcYScale(temps){
   return {yMin,yMax,yR,step,fmtY};
 }
 
-// ── SVGチャート（単一湯舟）────────────────────────
-function drawSingleChart(svgEl, points, _unused, color="#4f46e5"){
-  const W=320,H=150,PAD={t:22,r:14,b:28,l:42};
-  const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
+// ── SVGチャート（単一湯舟・横スクロール式）──────────
+// 表示窓は visiblePts 件分（3h/24h）だけ見え、左にスクロールすると過去が見える。
+const SVG_NS="http://www.w3.org/2000/svg";
+let _bathGeom=null;
+
+function drawSingleChart(svgEl, axisEl, points, color="#4f46e5"){
+  const H=150,tp=22,bp=28,leftPad=8,rightPad=20, ch=H-tp-bp;
   const temps=points.map(p=>p.temp).filter(t=>t!=null);
-  if(!temps.length){svgEl.innerHTML="";return;}
+  if(!temps.length){svgEl.innerHTML="";axisEl.innerHTML="";_bathGeom=null;return;}
 
   const {yMin,yMax,yR,step,fmtY}=calcYScale(temps);
-  const tx=i=>PAD.l+(i/(points.length-1||1))*cw;
-  const ty=t=>PAD.t+(1-(t-yMin)/yR)*ch;
+  const cont=document.getElementById("bath-chart-scroll");
+  const visiblePts=Math.max(2,_bathVisiblePts||60);
+  const cw=Math.max(120,cont.clientWidth||300);
+  const pxPerPt=cw/visiblePts;
+  const N=points.length, lastI=N-1;
+  const totalWidth=leftPad+(N-1)*pxPerPt+rightPad;
+  const tx=i=>leftPad+i*pxPerPt;
+  const ty=t=>tp+(1-(t-yMin)/yR)*ch;
+  _bathGeom={leftPad,pxPerPt,tp,bp,H,totalWidth,ty};
 
   let h="";
-  // グリッド＋Y軸ラベル
+  // グリッド（全幅）
   for(let t=yMin;t<=yMax+step*0.01;t=Math.round((t+step)*10)/10){
-    const y=ty(t);
-    if(y<PAD.t-2||y>H-PAD.b+2) continue;
-    h+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
-    h+=`<text x="${PAD.l-4}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${fmtY(t)}</text>`;
+    const y=ty(t); if(y<tp-2||y>H-bp+2) continue;
+    h+=`<line x1="0" y1="${y}" x2="${totalWidth}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
   }
   // ライン
-  const pts=points.map((p,i)=>p.temp!=null?`${tx(i)},${ty(p.temp)}`:null).filter(Boolean);
+  const pts=points.map((p,i)=>p.temp!=null?`${tx(i).toFixed(1)},${ty(p.temp).toFixed(1)}`:null).filter(Boolean);
   if(pts.length>1)
     h+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-  // ドット＋最新値ラベル
-  points.forEach((p,i)=>{
-    if(p.temp==null)return;
-    const cx=tx(i),cy=ty(p.temp),last=i===points.length-1;
-    h+=`<circle cx="${cx}" cy="${cy}" r="${last?5:2.5}" fill="${last?"#fff":color}" stroke="${color}" stroke-width="${last?2:0}"/>`;
-    if(last) h+=`<text x="${cx}" y="${cy-9}" text-anchor="middle" fill="${color}" font-size="10" font-weight="700">${p.temp.toFixed(1)}℃</text>`;
-  });
+  // 最新値マーカー＋ラベル
+  const lp=points[lastI];
+  if(lp&&lp.temp!=null){
+    h+=`<circle cx="${tx(lastI)}" cy="${ty(lp.temp)}" r="4" fill="#fff" stroke="${color}" stroke-width="2"/>`;
+    h+=`<text x="${tx(lastI)}" y="${ty(lp.temp)-9}" text-anchor="end" fill="${color}" font-size="10" font-weight="700">${lp.temp.toFixed(1)}℃</text>`;
+  }
   // X軸ラベル
-  const step2=Math.max(1,Math.floor(points.length/4));
+  const stepX=Math.max(1,Math.round(visiblePts/4));
+  let lastDay=null;
   points.forEach((p,i)=>{
-    if(i%step2!==0&&i!==points.length-1)return;
-    h+=`<text x="${tx(i)}" y="${H-4}" text-anchor="middle" fill="#94a3b8" font-size="8">${fmtShort(p.at)}</text>`;
+    if(i%stepX!==0&&i!==lastI)return;
+    const d=new Date(p.at), day=`${d.getMonth()+1}/${d.getDate()}`;
+    const lbl=day!==lastDay ? `${day} ${fmtShort(p.at)}` : fmtShort(p.at);
+    lastDay=day;
+    h+=`<text x="${tx(i)}" y="${H-4}" text-anchor="middle" fill="#94a3b8" font-size="8">${lbl}</text>`;
   });
+  svgEl.setAttribute("width",totalWidth);
+  svgEl.setAttribute("viewBox",`0 0 ${totalWidth} ${H}`);
   svgEl.innerHTML=h;
+
+  // 固定Y軸オーバーレイ
+  let a=`<rect x="0" y="0" width="42" height="${H}" fill="#fff"/>`;
+  for(let t=yMin;t<=yMax+step*0.01;t=Math.round((t+step)*10)/10){
+    const y=ty(t); if(y<tp-2||y>H-bp+2) continue;
+    a+=`<text x="38" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="9">${fmtY(t)}</text>`;
+  }
+  axisEl.setAttribute("viewBox",`0 0 42 ${H}`);
+  axisEl.innerHTML=a;
 }
 
 // ── SVGチャート（全湯舟）─────────────────────────
@@ -519,11 +560,16 @@ document.querySelectorAll(".modal-backdrop").forEach(el=>{
 function hoursToN(h){ return Math.ceil(h*60/3); }
 
 // ── 個別履歴モーダル ──────────────────────────────
-let _bathModalId=null, _bathModalTgt=null;
+let _bathModalId=null, _bathModalTgt=null, _bathVisiblePts=60;
+
+// 表示窓は hours 分だが、スクロールで遡れるよう余分に取得する
+const BATH_FETCH_HOURS={3:24, 24:72};
 
 async function loadBathChart(hours){
-  const bathId=_bathModalId, tgt=_bathModalTgt;
-  const n=hoursToN(hours);
+  const bathId=_bathModalId;
+  _bathVisiblePts=hoursToN(hours);
+  const fetchHours=BATH_FETCH_HOURS[hours]||hours;
+  const n=hoursToN(fetchHours);
   document.getElementById("bath-chart").innerHTML="";
   document.getElementById("bath-hist-tbody").innerHTML=
     `<tr><td colspan="3" style="color:var(--sub);text-align:center;padding:12px">読み込み中...</td></tr>`;
@@ -532,16 +578,25 @@ async function loadBathChart(hours){
     if(!rows.length){
       document.getElementById("bath-no-data").style.display="";
       document.getElementById("bath-hist-table").style.display="none";
+      _bathChartData=[]; _bathGeom=null;
+      document.getElementById("bath-chart").innerHTML="";
+      document.getElementById("bath-chart-axis").innerHTML="";
       return;
     }
     document.getElementById("bath-no-data").style.display="none";
     document.getElementById("bath-hist-table").style.display="";
     _bathChartData = rows;
-    drawSingleChart(document.getElementById("bath-chart"), rows, null, bathColor(bathId));
-    // スクラバー初期化（最新=右端）
+    drawSingleChart(document.getElementById("bath-chart"),
+                    document.getElementById("bath-chart-axis"), rows, bathColor(bathId));
+    // スクラバー初期化（最新=右端）。グラフも右端（ライブ）へスクロール
     const sc = document.getElementById("bath-scrubber");
     sc.max = rows.length - 1; sc.value = rows.length - 1;
-    updateBathCursor(rows.length - 1);
+    requestAnimationFrame(()=>{
+      const cont=document.getElementById("bath-chart-scroll");
+      _progScroll=true; cont.scrollLeft=cont.scrollWidth;
+      requestAnimationFrame(()=>{ _progScroll=false; });
+      updateBathCursor(rows.length - 1, false);
+    });
     document.getElementById("bath-hist-tbody").innerHTML=[...rows].reverse().map(r=>{
       const st2=calcStatus(r.temp,r.stale);
       return `<tr>
@@ -618,29 +673,58 @@ async function openOverallModal(){
   loadOverallChart(3);
 }
 
-// ── チャートスクラバー ────────────────────────────
+// ── チャートスクラバー＆横スクロール ───────────────
 let _bathChartData = [];
+let _progScroll = false;   // プログラム側スクロール中はscrollイベントを無視
 
-function updateBathCursor(idx){
-  if(!_bathChartData.length) return;
-  const r = _bathChartData[Math.max(0, Math.min(idx, _bathChartData.length-1))];
+function updateBathCursor(idx, doScroll=true){
+  if(!_bathChartData.length || !_bathGeom) return;
+  idx = Math.max(0, Math.min(idx, _bathChartData.length-1));
+  const r = _bathChartData[idx], g=_bathGeom;
   const info = document.getElementById("bath-scrubber-info");
-  info.textContent = r.temp!=null ? `${fmtShort(r.at)}  ${Number(r.temp).toFixed(1)}℃` : `${fmtShort(r.at)}  --℃`;
-  // カーソル線をSVGに描画
+  info.textContent = r.temp!=null
+    ? `${fmtDateTime(r.at)}  ${Number(r.temp).toFixed(1)}℃`
+    : `${fmtDateTime(r.at)}  --℃`;
+  const sc = document.getElementById("bath-scrubber");
+  if(+sc.value !== idx) sc.value = idx;
+
   const svg = document.getElementById("bath-chart");
-  const n=_bathChartData.length, W=320, H=150, PAD={t:18,r:14,b:22,l:38};
-  const x = PAD.l + (idx/(n-1||1))*(W-PAD.l-PAD.r);
+  const x = g.leftPad + idx*g.pxPerPt;
+  // カーソル線
   let cur = svg.querySelector(".cursor-line");
-  if(!cur){ cur=document.createElementNS("http://www.w3.org/2000/svg","line"); cur.classList.add("cursor-line"); svg.appendChild(cur); }
-  cur.setAttribute("x1",x); cur.setAttribute("y1",PAD.t);
-  cur.setAttribute("x2",x); cur.setAttribute("y2",H-PAD.b);
-  cur.setAttribute("stroke","var(--accent)"); cur.setAttribute("stroke-width","1.5");
-  cur.setAttribute("stroke-dasharray","3,2");
+  if(!cur){ cur=document.createElementNS(SVG_NS,"line"); cur.classList.add("cursor-line");
+    cur.setAttribute("stroke","var(--accent)"); cur.setAttribute("stroke-width","1.5");
+    cur.setAttribute("stroke-dasharray","3,2"); svg.appendChild(cur); }
+  cur.setAttribute("x1",x); cur.setAttribute("y1",g.tp);
+  cur.setAttribute("x2",x); cur.setAttribute("y2",g.H-g.bp);
+  // カーソル位置のドット
+  let dot = svg.querySelector(".cursor-dot");
+  if(!dot){ dot=document.createElementNS(SVG_NS,"circle"); dot.classList.add("cursor-dot");
+    dot.setAttribute("r","3.5"); dot.setAttribute("fill","#fff");
+    dot.setAttribute("stroke","var(--accent)"); dot.setAttribute("stroke-width","2"); svg.appendChild(dot); }
+  if(r.temp!=null){ dot.style.display=""; dot.setAttribute("cx",x); dot.setAttribute("cy",g.ty(r.temp)); }
+  else dot.style.display="none";
+
+  if(doScroll){
+    const cont=document.getElementById("bath-chart-scroll");
+    const target=Math.max(0, Math.min(x-cont.clientWidth/2, g.totalWidth-cont.clientWidth));
+    _progScroll=true; cont.scrollLeft=target;
+    requestAnimationFrame(()=>{ _progScroll=false; });
+  }
 }
 
+// スクラバー操作 → カーソル移動＆グラフを追従スクロール
 document.getElementById("bath-scrubber").addEventListener("input", function(){
-  updateBathCursor(parseInt(this.value));
+  updateBathCursor(parseInt(this.value), true);
 });
+
+// グラフを直接スクロール → 中央のデータにカーソル＆スクラバーを同期
+document.getElementById("bath-chart-scroll").addEventListener("scroll", function(){
+  if(_progScroll || !_bathGeom || !_bathChartData.length) return;
+  const center = this.scrollLeft + this.clientWidth/2;
+  const idx = Math.round((center - _bathGeom.leftPad) / _bathGeom.pxPerPt);
+  updateBathCursor(idx, false);
+}, {passive:true});
 
 load();
 setInterval(load, REFRESH*1000);
