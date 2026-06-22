@@ -286,6 +286,7 @@ let tickTimer = null, tickStart = Date.now();
 let lastData  = null, bathsData = [];
 
 // 湯舟ごとの色（全体グラフ用）
+const GRAY = "#94a3b8";
 const BATH_COLORS = {
   1: "#ef4444", 2: "#f97316", 3: "#3b82f6",
   5: "#8b5cf6", 6: "#22c55e", 20: "#06b6d4", 21: "#ec4899",
@@ -446,15 +447,31 @@ function drawSingleChart(svgEl, axisEl, points, color="#4f46e5"){
     const y=ty(t); if(y<tp-2||y>H-bp+2) continue;
     h+=`<line x1="0" y1="${y}" x2="${totalWidth}" y2="${y}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;
   }
-  // ライン
-  const pts=points.map((p,i)=>p.temp!=null?`${tx(i).toFixed(1)},${ty(p.temp).toFixed(1)}`:null).filter(Boolean);
-  if(pts.length>1)
-    h+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // ライン（staleは灰色でセグメント描画）
+  {
+    let segPts=[], lastStale=null;
+    const flushSeg=s=>{
+      if(segPts.length>1) h+=`<polyline points="${segPts.join(" ")}" fill="none" stroke="${s?GRAY:color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      segPts=[];
+    };
+    points.forEach((p,i)=>{
+      if(p.temp==null) return;
+      const cs=!!p.stale;
+      if(lastStale!==null&&cs!==lastStale){
+        segPts.push(`${tx(i).toFixed(1)},${ty(p.temp).toFixed(1)}`);
+        flushSeg(lastStale);
+      }
+      segPts.push(`${tx(i).toFixed(1)},${ty(p.temp).toFixed(1)}`);
+      lastStale=cs;
+    });
+    if(lastStale!==null) flushSeg(lastStale);
+  }
   // 最新値マーカー＋ラベル
   const lp=points[lastI];
   if(lp&&lp.temp!=null){
-    h+=`<circle cx="${tx(lastI)}" cy="${ty(lp.temp)}" r="4" fill="#fff" stroke="${color}" stroke-width="2"/>`;
-    h+=`<text x="${tx(lastI)}" y="${ty(lp.temp)-9}" text-anchor="end" fill="${color}" font-size="10" font-weight="700">${lp.temp.toFixed(1)}℃</text>`;
+    const lc=lp.stale?GRAY:color;
+    h+=`<circle cx="${tx(lastI)}" cy="${ty(lp.temp)}" r="4" fill="#fff" stroke="${lc}" stroke-width="2"/>`;
+    h+=`<text x="${tx(lastI)}" y="${ty(lp.temp)-9}" text-anchor="end" fill="${lc}" font-size="10" font-weight="700">${lp.temp.toFixed(1)}℃</text>`;
   }
   // X軸ラベル
   const stepX=Math.max(1,Math.round(visiblePts/4));
@@ -488,9 +505,9 @@ function drawOverallChart(svgEl, allData){
   // 湯舟ごとにグループ化
   const groups={};
   for(const r of allData){
-    if(r.temp==null||r.stale) continue;
+    if(r.temp==null) continue;
     if(!groups[r.bath_id]) groups[r.bath_id]={name:r.bath_name,pts:[]};
-    groups[r.bath_id].pts.push({at:r.at,temp:r.temp});
+    groups[r.bath_id].pts.push({at:r.at,temp:r.temp,stale:r.stale});
   }
   const ids=Object.keys(groups);
   if(!ids.length){svgEl.innerHTML="";return;}
@@ -515,15 +532,30 @@ function drawOverallChart(svgEl, allData){
 
   for(const id of ids){
     const g=groups[id], c=bathColor(Number(id));
-    const pts=g.pts.map(p=>{const xi=timeIdx[p.at];return xi!==undefined?`${tx(xi)},${ty(p.temp)}`:null;}).filter(Boolean);
-    if(pts.length>1)
-      h+=`<polyline points="${pts.join(" ")}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>`;
+    // staleは灰色でセグメント描画
+    let segPts=[], lastStale=null;
+    const flushSeg=s=>{
+      if(segPts.length>1) h+=`<polyline points="${segPts.join(" ")}" fill="none" stroke="${s?GRAY:c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>`;
+      segPts=[];
+    };
+    g.pts.forEach(p=>{
+      const xi=timeIdx[p.at]; if(xi===undefined) return;
+      const cs=!!p.stale;
+      if(lastStale!==null&&cs!==lastStale){
+        segPts.push(`${tx(xi)},${ty(p.temp)}`);
+        flushSeg(lastStale);
+      }
+      segPts.push(`${tx(xi)},${ty(p.temp)}`);
+      lastStale=cs;
+    });
+    if(lastStale!==null) flushSeg(lastStale);
     if(g.pts.length){
       const last=g.pts[g.pts.length-1];
       const xi=timeIdx[last.at];
       if(xi!==undefined){
-        h+=`<circle cx="${tx(xi)}" cy="${ty(last.temp)}" r="4" fill="#fff" stroke="${c}" stroke-width="2"/>`;
-        h+=`<text x="${tx(xi)}" y="${ty(last.temp)-8}" text-anchor="middle" fill="${c}" font-size="9" font-weight="700">${last.temp.toFixed(1)}</text>`;
+        const lc=last.stale?GRAY:c;
+        h+=`<circle cx="${tx(xi)}" cy="${ty(last.temp)}" r="4" fill="#fff" stroke="${lc}" stroke-width="2"/>`;
+        h+=`<text x="${tx(xi)}" y="${ty(last.temp)-8}" text-anchor="middle" fill="${lc}" font-size="9" font-weight="700">${last.temp.toFixed(1)}</text>`;
       }
     }
   }
