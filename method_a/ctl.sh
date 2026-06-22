@@ -2,24 +2,25 @@
 # ============================================================
 # 露天風呂モニター  制御スクリプト (スマホ/Termux用)
 #   使い方:
-#     bash ~/bath_system/ctl.sh start     起動（バックグラウンド）
-#     bash ~/bath_system/ctl.sh stop      停止（kill）
-#     bash ~/bath_system/ctl.sh restart   再起動
-#     bash ~/bath_system/ctl.sh status    状態確認（ADB接続・稼働・ポート）
-#     bash ~/bath_system/ctl.sh check     接続確認のみ（自己ADB）
-#     bash ~/bath_system/ctl.sh log       ログを追尾表示（Ctrl+Cで抜ける）
+#     bash ~/bath_system/method_a/ctl.sh start     起動（バックグラウンド）
+#     bash ~/bath_system/method_a/ctl.sh stop      停止（kill）
+#     bash ~/bath_system/method_a/ctl.sh restart   再起動
+#     bash ~/bath_system/method_a/ctl.sh status    状態確認（ADB接続・稼働・ポート）
+#     bash ~/bath_system/method_a/ctl.sh check     接続確認のみ（自己ADB）
+#     bash ~/bath_system/method_a/ctl.sh log       ログを追尾表示（Ctrl+Cで抜ける）
 #
 #   ※ 短縮エイリアスを入れておくと便利（最下部の説明参照）:
 #        b start / b stop / b restart / b status / b log
 # ============================================================
 set -u
 
-DIR="$HOME/bath_system"
+# このスクリプト自身のあるフォルダ（= method_a）を基準にする
+DIR="$(cd "$(dirname "$0")" && pwd)"
 PIDFILE="$DIR/server.pid"
 LOGFILE="$DIR/server.out"
 ADB_TARGET="127.0.0.1:5555"
 # 起動するアプリ。軽量版(run_lite.py)は温度取得→Render送信のみ(Flaskなし)。
-# 案内板サーバー(:5000)も使いたい場合は APP=server.py に変える（run.sh でも起動可）。
+# 共有コア(adb_reader)は ../shared から、設定は同フォルダの config.json を参照する。
 APP="run_lite.py"
 
 # ── 自己ADB接続を確認（必要なら接続）。device状態なら0を返す ──

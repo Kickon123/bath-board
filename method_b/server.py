@@ -1,3 +1,4 @@
+import os
 import json
 import threading
 import subprocess
@@ -6,13 +7,21 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
-app = Flask(__name__, static_folder="static")
+BASE_DIR    = Path(__file__).resolve().parent          # method_b/
+SHARED_DIR  = BASE_DIR.parent / "shared"               # 共有コア・静的ファイル
+STATIC_DIR  = SHARED_DIR / "static"
+
+# 設定 / temperatures.json / ログはこの method_b フォルダに置く（adb_reader が参照）
+os.environ.setdefault("BATH_DIR", str(BASE_DIR))
+# 共有コア（adb_reader / rf_reader）を import できるようにする
+sys.path.insert(0, str(SHARED_DIR))
+
+app = Flask(__name__, static_folder=str(STATIC_DIR))
 CORS(app)
 
-BASE_DIR    = Path(__file__).parent
 CONFIG_PATH = BASE_DIR / "config.json"
 TEMPS_PATH  = BASE_DIR / "temperatures.json"
-BG_PATH     = BASE_DIR / "static" / "bg.png"
+BG_PATH     = STATIC_DIR / "bg.png"
 PDF_PATH    = BASE_DIR / "湯畑レイアウト.pdf"
 
 
@@ -40,38 +49,38 @@ def save_temps(data):
 @app.route("/")
 @app.route("/slideshow")
 def slideshow():
-    return send_from_directory("static", "slideshow.html")
+    return send_from_directory(STATIC_DIR, "slideshow.html")
 
 @app.route("/slideshow64")
 @app.route("/64")
 def slideshow64():
-    return send_from_directory("static", "slideshow64.html")
+    return send_from_directory(STATIC_DIR, "slideshow64.html")
 
 @app.route("/yubatake")
 def yubatake():
-    return send_from_directory("static", "base7-flat.html")
+    return send_from_directory(STATIC_DIR, "yubatake.html")
 
 @app.route("/base-all")
 @app.route("/all")
 def base_all():
-    return send_from_directory("static", "base-all.html")
+    return send_from_directory(STATIC_DIR, "base-all.html")
 
 @app.route("/bath/yubatake")
 def bath_yubatake():
-    return send_from_directory("static", "base7-flat.html")
+    return send_from_directory(STATIC_DIR, "yubatake.html")
 
 @app.route("/bath/daiyokujo")
 def bath_daiyokujo():
-    return send_from_directory("static", "daiyokujo.html")
+    return send_from_directory(STATIC_DIR, "daiyokujo.html")
 
 @app.route("/bath/all")
 def bath_all():
-    return send_from_directory("static", "base-all.html")
+    return send_from_directory(STATIC_DIR, "base-all.html")
 
 
 @app.route("/kanri")
 def kanri():
-    return send_from_directory("static", "staff.html")
+    return send_from_directory(STATIC_DIR, "staff.html")
 
 @app.route("/api/baths")
 def api_baths():
@@ -156,7 +165,7 @@ def api_bg_upload():
     if "photo" not in request.files:
         return jsonify({"error": "ファイルがありません"}), 400
     file = request.files["photo"]
-    tmp  = BASE_DIR / "static" / "_upload_tmp.jpg"
+    tmp  = STATIC_DIR / "_upload_tmp.jpg"
     file.save(str(tmp))
     try:
         cmd = [sys.executable, str(BASE_DIR / "convert_photo.py"), str(tmp)]

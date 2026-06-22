@@ -1,0 +1,3 @@
+# Method A（スマホ + Termux / 軽量版 run_lite.py）
+# 共有コアの依存を取り込む（adb_reader が requests を使用）
+-r ../shared/requirements.txt

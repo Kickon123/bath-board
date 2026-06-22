@@ -211,7 +211,7 @@ def slideshow64():
 @app.get("/yubatake")
 @app.get("/board")
 def board():
-    return send_from_directory("static", "base7-flat.html")
+    return send_from_directory("static", "yubatake.html")
 
 @app.get("/base-all")
 @app.get("/all")
@@ -220,7 +220,7 @@ def board_all():
 
 @app.get("/bath/yubatake")
 def bath_yubatake():
-    return send_from_directory("static", "base7-flat.html")
+    return send_from_directory("static", "yubatake.html")
 
 @app.get("/bath/daiyokujo")
 def bath_daiyokujo():

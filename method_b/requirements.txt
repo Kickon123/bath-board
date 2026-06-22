@@ -1,0 +1,12 @@
+# Method B（PC + BlueStacks / Flaskサーバー server.py）
+# 共有コアの依存を取り込む
+-r ../shared/requirements.txt
+
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# 任意: 背景画像(bg.png)生成・写真変換を使う場合のみ
+# （convert_photo.py / PDF変換。通常運用では不要）
+# PyMuPDF>=1.23.0
+# opencv-python>=4.8.0
+# numpy>=1.24.0

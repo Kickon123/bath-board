@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ============================================================
-# 露天風呂モニター  スマホ(Termux)セットアップ
-#   使い方:  bash /sdcard/Download/bath_system/phone_setup.sh
+# 露天風呂モニター  スマホ(Termux)セットアップ  ＜Method A: 軽量版＞
+#   使い方:  bash /sdcard/Download/bath_system/method_a/phone_setup.sh
 # ============================================================
 echo "=================================================="
 echo " 露天風呂モニター セットアップ開始"
@@ -41,5 +41,10 @@ echo "      （出ない場合は数秒待ってから次へ）"
 echo ""
 echo "=================================================="
 echo " セットアップ完了！"
-echo " 起動するには:   bash ~/bath_system/run.sh"
+echo ""
+echo " 次の手順:"
+echo "   1) スマホ用の設定を有効化:"
+echo "      cp ~/bath_system/method_a/config.phone.json ~/bath_system/method_a/config.json"
+echo "   2) 起動:"
+echo "      bash ~/bath_system/method_a/ctl.sh start"
 echo "=================================================="

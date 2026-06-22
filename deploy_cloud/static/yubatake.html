@@ -74,7 +74,7 @@
   </div>
 </div>
 <div id="wrap">
-  <img src="/static/base7.png" id="photo" alt="湯畑"/>
+  <img src="/static/yubatake.png" id="photo" alt="湯畑"/>
   <div id="pins"></div>
   <div id="right-panel">
     <div id="yugata">湯畑/Yubatake</div>
@@ -89,7 +89,7 @@
 </div>
 
 <script>
-// base7.png (1514x781) 上の各湯舟の位置 (u:左0→右1, v:上0→下1)
+// yubatake.png (1514x781) 上の各湯舟の位置 (u:左0→右1, v:上0→下1)
 const SPOTS = [
   { id:1, name:"高めの湯",  u:0.16, v:0.57 },
   { id:2, name:"ぬるめの湯",u:0.25, v:0.55 },
@@ -164,7 +164,7 @@ async function load(){
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
     tempMap={}; staleMap={}; atMap={};
     for(const b of data.baths){ tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at; }
-    // base7は露天風呂(湯畑)のみ表示。男湯/女湯など非表示の湯舟のstaleで「一部未取得」にしない
+    // 湯畑(yubatake)は露天風呂のみ表示。男湯/女湯など非表示の湯舟のstaleで「一部未取得」にしない
     const shownIds=new Set(SPOTS.map(s=>s.id));
     const anyStale=data.baths.some(b=>shownIds.has(b.id)&&b.stale);
     const amb=data.gateway;

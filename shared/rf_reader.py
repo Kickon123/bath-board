@@ -13,6 +13,7 @@ RTL-SDRドングルでInkbird IBS-P02Rセンサーの電波(433.92MHz)を直接�
   python3 rf_reader.py --replay f.log  # 保存済みJSONログでテスト（ドングル不要）
 """
 
+import os
 import subprocess
 import json
 import time
@@ -29,7 +30,9 @@ if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-BASE_DIR    = Path(__file__).parent
+# 実行する method 側のフォルダ（adb_reader.py と同じく BATH_DIR で切り替え）。
+# 未設定なら従来どおりこのファイルのあるフォルダを使う（後方互換）。
+BASE_DIR    = Path(os.environ.get("BATH_DIR") or Path(__file__).resolve().parent)
 CONFIG_PATH = BASE_DIR / "config.json"
 TEMPS_PATH  = BASE_DIR / "temperatures.json"
 LOG_PATH    = BASE_DIR / "bath_system.log"

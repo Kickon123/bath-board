@@ -6,3 +6,4 @@ temperatures.json
 .claude/
 server.out
 server.pid
+venv/

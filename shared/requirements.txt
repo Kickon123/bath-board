@@ -1,0 +1,2 @@
+# 共有コア（adb_reader.py / rf_reader.py）が必要とする依存
+requests>=2.31.0

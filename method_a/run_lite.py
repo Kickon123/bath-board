@@ -13,12 +13,20 @@
   python run_lite.py          # ループ実行（interval秒ごと）
   python run_lite.py --once   # 1回だけ取得して送信
 """
+import os
 import sys
 import time
 import json
 import requests
 import logging
+from pathlib import Path
 from datetime import datetime
+
+# 設定 / temperatures.json / ログはこの method_a フォルダに置く（adb_reader が参照）
+_HERE = Path(__file__).resolve().parent
+os.environ.setdefault("BATH_DIR", str(_HERE))
+# 共有コア（adb_reader）を import できるようにする
+sys.path.insert(0, str(_HERE.parent / "shared"))
 
 from adb_reader import load_config, run_once, load_temps, log
 
