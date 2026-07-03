@@ -105,7 +105,7 @@ Inkbird 温度センサーの水温を取得し、大浴場・露天風呂の案
 ## 6. 運用上の技術メモ
 
 - **取得中はスマホを触らない。** Inkbird アプリを前面にして UI ダンプするため、割り込むと「データなし」になる。確認は `GET /api/baths`（非干渉）で行う。
-- **スマホ再起動で自己ADBがリセット**される。復旧: PC に USB 接続して `adb tcpip 5555` を一度実行 → `ctl.sh start`。
+- **スマホ再起動で自己ADBがリセット**される。復旧: PC に USB 接続して PC のターミナルから `adb tcpip 5555` → 続けて `adb shell 'run-as com.termux ...'` で `ctl.sh start` を実行。手順詳細は `shared/docs/PHONE_OPS.md` を参照。
 - **取得間隔は 3 分が最適**（`adb.interval: 180`）。UI 操作 1 周に 1〜2 分かかるため縮めても無意味で発熱のみ増える。常時充電必須。
 - **方式A/B の切替は `config.json` の差し替えだけ**（`config.phone.json` ↔ `method_b/config.json`）。座標は解像度依存（BlueStacks は 1920×1080/240dpi 前提）。
 - **Inkbird アプリの UI 変更に注意**。リソース ID（`tv_temp` 等）が変わると `adb_reader.py` の抽出が壊れる。アプリ更新時は要確認。

@@ -30,13 +30,21 @@ deploy_cloud/  Render クラウドサーバー（GitHub から自動デプロイ
 ## 方式A（本番）の起動
 
 ```bash
-# Termux で
+# Termux で（通常運用）
 bash ~/bath_system/ctl.sh start    # 起動
 bash ~/bath_system/ctl.sh status   # 状態確認
 bash ~/bath_system/ctl.sh stop     # 停止
 ```
 
-詳細は [method_a/README.md](method_a/README.md) を参照。
+**スマホ再起動後は PC + USB ケーブルで以下を実行：**
+
+```bash
+# PC のターミナルで（USB 接続した状態で）
+/home/r/platform-tools/adb tcpip 5555
+/home/r/platform-tools/adb shell 'run-as com.termux env HOME=/data/data/com.termux/files/home TMPDIR=/data/data/com.termux/files/usr/tmp PREFIX=/data/data/com.termux/files/usr PATH=/data/data/com.termux/files/usr/bin /data/data/com.termux/files/usr/bin/bash /data/data/com.termux/files/home/bath_system/ctl.sh start'
+```
+
+詳細は [method_a/README.md](method_a/README.md) と [shared/docs/PHONE_OPS.md](shared/docs/PHONE_OPS.md) を参照。
 
 ## 方式B の起動
 

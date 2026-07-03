@@ -32,6 +32,11 @@ echo "    コピー完了: $(ls ~/bath_system | tr '\n' ' ')"
 
 echo ""
 echo "=== 5/5 自分自身に ADB 接続 ==="
+echo ""
+echo "    ★ 事前に PC から USB 接続して以下を実行しておくこと:"
+echo "         /home/r/platform-tools/adb tcpip 5555"
+echo "      （これをやらないと以下の接続が失敗します）"
+echo ""
 adb kill-server 2>/dev/null
 adb connect 127.0.0.1:5555
 echo ""
