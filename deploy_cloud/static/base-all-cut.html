@@ -276,7 +276,7 @@ function render(){
     </div>`;
   }
   pinsEl.innerHTML=html;
-  if(EDIT_MODE) addEditHandles();
+  if(EDIT_MODE && window.addEditHandles && !window._dragSpot) window.addEditHandles();
 }
 
 // ── 大浴場レンダリング ──
@@ -367,9 +367,11 @@ setInterval(updateClock,1000);
 
 // ── 編集モード ──
 if(EDIT_MODE){
-  // パネル
+  window._dragSpot=null;
+
+  // 操作パネル
   const ep=document.createElement('div');
-  ep.style.cssText='position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,.88);color:#fff;padding:12px 16px;border-radius:10px;font-size:12px;font-family:monospace;min-width:420px;border:2px solid #FFD700;pointer-events:auto;';
+  ep.style.cssText='position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,.9);color:#fff;padding:12px 16px;border-radius:10px;font-size:12px;font-family:monospace;min-width:440px;border:2px solid #FFD700;';
   ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 金色の丸をドラッグして湯の位置へ</div><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button>';
   document.body.appendChild(ep);
 
@@ -377,43 +379,63 @@ if(EDIT_MODE){
     const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)} },`);
     document.getElementById('ep-out').textContent='const SPOTS = [\n'+lines.join('\n')+'\n];';
   }
-  epUpdate();
   document.getElementById('ep-copy').onclick=()=>{
     navigator.clipboard.writeText(document.getElementById('ep-out').textContent).then(()=>{
       const b=document.getElementById('ep-copy');
       b.textContent='✓ コピー済み'; setTimeout(()=>b.textContent='コピー',1500);
     });
   };
+  window._epUpdate=epUpdate;
 
-  function addEditHandles(){
-    document.querySelectorAll('.ehandle').forEach(e=>e.remove());
+  // ハンドルを現在の座標に描画（毎render時に呼ばれる）
+  window.addEditHandles=function(){
     const wrap=document.getElementById('wrap');
     const ox=window._eox||0, oy=window._eoy||0, dw=window._edw||1, dh=window._edh||1;
+    let cont=document.getElementById('ehandles');
+    if(!cont){
+      cont=document.createElement('div');
+      cont.id='ehandles';
+      cont.style.cssText='position:absolute;inset:0;z-index:600;';
+      wrap.appendChild(cont);
+    }
+    cont.innerHTML='';
     for(const s of SPOTS){
       const px=ox+s.u*dw, py=oy+s.v*dh;
       const h=document.createElement('div');
       h.className='ehandle';
-      h.style.cssText=`position:absolute;left:${px}px;top:${py}px;width:24px;height:24px;border-radius:50%;background:rgba(255,215,0,.85);border:3px solid #fff;transform:translate(-50%,-50%);cursor:grab;z-index:600;box-shadow:0 0 10px rgba(0,0,0,.7);`;
+      h.dataset.id=s.id;
+      h.style.cssText=`position:absolute;left:${px}px;top:${py}px;width:28px;height:28px;border-radius:50%;background:rgba(255,215,0,.9);border:3px solid #fff;transform:translate(-50%,-50%);cursor:grab;box-shadow:0 0 12px rgba(0,0,0,.8);`;
       h.title=s.name;
-      wrap.appendChild(h);
-      let drag=false;
-      h.addEventListener('mousedown',e=>{e.preventDefault();drag=true;h.style.cursor='grabbing';h.style.background='rgba(255,80,0,.9)';});
-      window.addEventListener('mousemove',e=>{
-        if(!drag) return;
-        const rect=wrap.getBoundingClientRect();
-        const rx=e.clientX-rect.left, ry=e.clientY-rect.top;
-        const ox2=window._eox||0,oy2=window._eoy||0,dw2=window._edw||1,dh2=window._edh||1;
-        s.u=Math.max(0,Math.min(1,(rx-ox2)/dw2));
-        s.v=Math.max(0,Math.min(1,(ry-oy2)/dh2));
-        h.style.left=(ox2+s.u*dw2)+'px';
-        h.style.top=(oy2+s.v*dh2)+'px';
-        render(); epUpdate();
-      });
-      window.addEventListener('mouseup',()=>{if(drag){drag=false;h.style.cursor='grab';h.style.background='rgba(255,215,0,.85)';}});
+      cont.appendChild(h);
     }
-  }
-  window.addEditHandles=addEditHandles;
-  addEditHandles();
+  };
+
+  // ドラッグ操作（イベントは一度だけ登録）
+  const wrap=document.getElementById('wrap');
+  wrap.addEventListener('mousedown',e=>{
+    const h=e.target.closest('.ehandle');
+    if(!h) return;
+    e.preventDefault();
+    window._dragSpot=SPOTS.find(s=>String(s.id)===h.dataset.id);
+    h.style.cursor='grabbing'; h.style.background='rgba(255,80,0,.95)';
+  });
+  window.addEventListener('mousemove',e=>{
+    const s=window._dragSpot;
+    if(!s) return;
+    const rect=wrap.getBoundingClientRect();
+    const ox=window._eox||0,oy=window._eoy||0,dw=window._edw||1,dh=window._edh||1;
+    s.u=Math.max(0,Math.min(1,(e.clientX-rect.left-ox)/dw));
+    s.v=Math.max(0,Math.min(1,(e.clientY-rect.top-oy)/dh));
+    window.addEditHandles();  // ハンドルだけ更新（render()は呼ばない）
+    epUpdate();
+    // ピン表示も追従させたいので pins だけ再描画
+    render();
+  });
+  window.addEventListener('mouseup',()=>{ window._dragSpot=null; });
+
+  epUpdate();
+  render();            // _eox 等を確定
+  window.addEditHandles();  // ハンドル初回描画
 }
 </script>
 </body>
