@@ -42,12 +42,12 @@
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
-  .pin .nm{font-size:1.2vw;color:#fff;font-weight:bold;}
-  .pin .tp{font-size:1.9vw;font-weight:800;color:#FFD700;}
-  .pin.sm .nm{font-size:1.1vw;}
-  .pin.sm .tp{font-size:1.6vw;color:#FFD700;}
-  .pin.lg .nm{font-size:1.4vw;}
-  .pin.lg .tp{font-size:2.3vw;color:#FFD700;}
+  .pin .nm{font-size:var(--pin-nm,1.2vw);color:#fff;font-weight:bold;}
+  .pin .tp{font-size:var(--pin-tp,1.9vw);font-weight:800;color:#FFD700;}
+  .pin.sm .nm{font-size:var(--pin-sm-nm,1.1vw);}
+  .pin.sm .tp{font-size:var(--pin-sm-tp,1.6vw);color:#FFD700;}
+  .pin.lg .nm{font-size:var(--pin-lg-nm,1.4vw);}
+  .pin.lg .tp{font-size:var(--pin-lg-tp,2.3vw);color:#FFD700;}
   .line{position:absolute;transform:translateX(-50%);width:3px;
     background:rgba(255,255,255,0.55);pointer-events:none;}
   .pin.stale{border-style:dashed;opacity:.9;}
@@ -247,6 +247,17 @@ function render(){
   const dw=iw*scale, dh=ih*scale;
   const ox=(bw-dw)/2, oy=(bh-dh)/2;
 
+  // ピンサイズを画像の実表示幅に比例させる
+  const p=dw/100;
+  const r=document.documentElement;
+  r.style.setProperty('--pin-nm',   (p*1.25).toFixed(1)+'px');
+  r.style.setProperty('--pin-tp',   (p*2.00).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-nm',(p*1.10).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-tp',(p*1.65).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-nm',(p*1.45).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-tp',(p*2.40).toFixed(1)+'px');
+  const lineH=Math.round(p*3.8);
+
   let html='';
   for(const s of SPOTS){
     const px=ox+s.u*dw, py=oy+s.v*dh;
@@ -255,8 +266,8 @@ function render(){
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
-    html+=`<div class="line" style="left:${px}px;top:${py-70}px;height:70px;background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc}">
+    html+=`<div class="line" style="left:${px}px;top:${py-lineH}px;height:${lineH}px;background:${lc};opacity:.7"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-lineH}px;--lc:${lc}">
       <div class="nm">${s.name}</div>
       <div class="tp">${label}</div>
       ${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
