@@ -250,13 +250,13 @@ function render(){
   // ピンサイズを画像の実表示幅に比例させる
   const p=dw/100;
   const r=document.documentElement;
-  r.style.setProperty('--pin-nm',   (p*1.25).toFixed(1)+'px');
-  r.style.setProperty('--pin-tp',   (p*2.00).toFixed(1)+'px');
-  r.style.setProperty('--pin-sm-nm',(p*1.10).toFixed(1)+'px');
-  r.style.setProperty('--pin-sm-tp',(p*1.65).toFixed(1)+'px');
-  r.style.setProperty('--pin-lg-nm',(p*1.45).toFixed(1)+'px');
-  r.style.setProperty('--pin-lg-tp',(p*2.40).toFixed(1)+'px');
-  const lineH=Math.round(p*3.8);
+  r.style.setProperty('--pin-nm',   (p*1.55).toFixed(1)+'px');
+  r.style.setProperty('--pin-tp',   (p*2.50).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-nm',(p*1.35).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-tp',(p*2.10).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-nm',(p*1.75).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-tp',(p*2.90).toFixed(1)+'px');
+  const lineH=Math.round(p*4.8);
 
   let html='';
   for(const s of SPOTS){
