@@ -189,11 +189,11 @@
 const EDIT_MODE=new URLSearchParams(location.search).has('edit');
 // ── 露天風呂スポット定義 ──
 const SPOTS = [
-  { id:1, name:"高めの湯",  u:0.11, v:0.58 },
-  { id:2, name:"ぬるめの湯",u:0.21, v:0.54 },
-  { id:3, name:"低めの湯",  u:0.30, v:0.50 },
-  { id:6, name:"立湯",      u:0.51, v:0.46, lg:true },
-  { id:5, name:"座湯",      u:0.51, v:0.75, lg:true },
+  { id:1, name:"高めの湯",  u:0.200, v:0.573 },
+  { id:2, name:"ぬるめの湯",u:0.322, v:0.533 },
+  { id:3, name:"低めの湯",  u:0.437, v:0.492 },
+  { id:6, name:"立湯",      u:0.638, v:0.467, lg:true },
+  { id:5, name:"座湯",      u:0.510, v:0.750, lg:true },
 ];
 
 // ── 大浴場スポット定義 ──
@@ -372,8 +372,15 @@ if(EDIT_MODE){
   // 操作パネル
   const ep=document.createElement('div');
   ep.style.cssText='position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,.9);color:#fff;padding:12px 16px;border-radius:10px;font-size:12px;font-family:monospace;min-width:440px;border:2px solid #FFD700;';
-  ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 金色の丸をドラッグして湯の位置へ</div><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button>';
+  ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 金色の丸をドラッグして湯の位置へ<button id="ep-hide" style="float:right;padding:2px 8px;background:#444;color:#fff;border:1px solid #888;border-radius:5px;cursor:pointer;font-size:11px">隠す</button></div><div id="ep-body"><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button></div>';
   document.body.appendChild(ep);
+  document.getElementById('ep-hide').onclick=()=>{
+    const b=document.getElementById('ep-body'), btn=document.getElementById('ep-hide');
+    const hidden=b.style.display==='none';
+    b.style.display=hidden?'block':'none';
+    btn.textContent=hidden?'隠す':'表示';
+    ep.style.minWidth=hidden?'440px':'0';
+  };
 
   function epUpdate(){
     const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)} },`);
