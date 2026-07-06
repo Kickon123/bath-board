@@ -65,9 +65,10 @@
     50%{filter:drop-shadow(0 0 28px rgba(255,210,0,1)) drop-shadow(0 0 60px rgba(255,130,0,.8));}
   }
   #legend{position:absolute;transform:translate(-50%,-50%);
+    width:max-content;
     background:rgba(10,18,8,.6);color:#dfd5b8;padding:6px 10px;
     border-radius:9px;font-size:0.65vw;}
-  #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;}
+  #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;white-space:nowrap;}
   #legend .d{width:10px;height:10px;border-radius:3px;}
 
   /* ── 右: 大浴場 ── */
@@ -383,7 +384,7 @@ if(EDIT_MODE){
   // 操作パネル
   const ep=document.createElement('div');
   ep.style.cssText='position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,.9);color:#fff;padding:12px 16px;border-radius:10px;font-size:12px;font-family:monospace;min-width:440px;border:2px solid #FFD700;';
-  ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 金色の丸をドラッグして湯の位置へ<button id="ep-hide" style="float:right;padding:2px 8px;background:#444;color:#fff;border:1px solid #888;border-radius:5px;cursor:pointer;font-size:11px">隠す</button></div><div id="ep-body"><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button></div>';
+  ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 🟡金=湯 / 🔵水色=文字・表 をドラッグ<button id="ep-hide" style="float:right;padding:2px 8px;background:#444;color:#fff;border:1px solid #888;border-radius:5px;cursor:pointer;font-size:11px">隠す</button></div><div id="ep-body"><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button></div>';
   document.body.appendChild(ep);
   document.getElementById('ep-hide').onclick=()=>{
     const b=document.getElementById('ep-body'), btn=document.getElementById('ep-hide');
@@ -395,7 +396,10 @@ if(EDIT_MODE){
 
   function epUpdate(){
     const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)} },`);
-    document.getElementById('ep-out').textContent='const SPOTS = [\n'+lines.join('\n')+'\n];';
+    const flines=FLOATS.map(f=>`  { key:"${f.key}", name:"${f.name}", u:${f.u.toFixed(3)}, v:${f.v.toFixed(3)} },`);
+    document.getElementById('ep-out').textContent=
+      'const SPOTS = [\n'+lines.join('\n')+'\n];\n\n'+
+      'const FLOATS = [\n'+flines.join('\n')+'\n];';
   }
   document.getElementById('ep-copy').onclick=()=>{
     navigator.clipboard.writeText(document.getElementById('ep-out').textContent).then(()=>{
@@ -417,15 +421,18 @@ if(EDIT_MODE){
       wrap.appendChild(cont);
     }
     cont.innerHTML='';
-    for(const s of SPOTS){
-      const px=ox+s.u*dw, py=oy+s.v*dh;
+    const mk=(obj,kind,color)=>{
+      const px=ox+obj.u*dw, py=oy+obj.v*dh;
       const h=document.createElement('div');
       h.className='ehandle';
-      h.dataset.id=s.id;
-      h.style.cssText=`position:absolute;left:${px}px;top:${py}px;width:28px;height:28px;border-radius:50%;background:rgba(255,215,0,.9);border:3px solid #fff;transform:translate(-50%,-50%);cursor:grab;box-shadow:0 0 12px rgba(0,0,0,.8);`;
-      h.title=s.name;
+      h.dataset.kind=kind;
+      h.dataset.key=(kind==='spot'?obj.id:obj.key);
+      h.style.cssText=`position:absolute;left:${px}px;top:${py}px;width:28px;height:28px;border-radius:50%;background:${color};border:3px solid #fff;transform:translate(-50%,-50%);cursor:grab;box-shadow:0 0 12px rgba(0,0,0,.8);`;
+      h.title=obj.name;
       cont.appendChild(h);
-    }
+    };
+    for(const s of SPOTS) mk(s,'spot','rgba(255,215,0,.9)');
+    for(const f of FLOATS) mk(f,'float','rgba(0,200,255,.9)');
   };
 
   // ドラッグ操作（イベントは一度だけ登録）
@@ -434,8 +441,10 @@ if(EDIT_MODE){
     const h=e.target.closest('.ehandle');
     if(!h) return;
     e.preventDefault();
-    window._dragSpot=SPOTS.find(s=>String(s.id)===h.dataset.id);
-    h.style.cursor='grabbing'; h.style.background='rgba(255,80,0,.95)';
+    window._dragSpot = h.dataset.kind==='spot'
+      ? SPOTS.find(s=>String(s.id)===h.dataset.key)
+      : FLOATS.find(f=>f.key===h.dataset.key);
+    h.style.cursor='grabbing'; h.style.opacity='.55';
   });
   window.addEventListener('mousemove',e=>{
     const s=window._dragSpot;
