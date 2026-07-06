@@ -13,7 +13,8 @@
   #topbar{display:flex;align-items:stretch;background:rgba(10,18,8,.8);flex-shrink:0;}
   #topbar-l{flex:8;display:flex;align-items:center;justify-content:space-between;
     padding:5px 12px;}
-  #topbar-r{flex:2;display:flex;align-items:center;justify-content:space-between;padding:5px 12px;border-left:1px solid rgba(255,200,100,.18);}
+  #topbar-r{flex:2;display:flex;align-items:center;justify-content:space-between;padding:5px 12px;}
+  body::after{content:"";position:fixed;top:0;bottom:0;left:80%;width:1px;background:rgba(255,200,100,.18);pointer-events:none;z-index:100;}
   #topbar-r h2{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
   #topbar-r h2 small{display:block;font-size:1.2vw;color:#b8a884;}
   #topbar h1{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
@@ -75,7 +76,6 @@
     display:flex;
     flex-direction:column;
     background:#080f06;
-    border-left:1px solid rgba(255,200,100,.18);
   }
   #daiyu-cards{
     flex:1;
