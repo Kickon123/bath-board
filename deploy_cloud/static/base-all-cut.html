@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>湯畑 露天風呂 温度マップ</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0d140a;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
+    height:100vh;display:flex;flex-direction:column;}
+
+  /* ── トップバー ── */
+  #topbar{display:flex;align-items:stretch;background:rgba(10,18,8,.8);flex-shrink:0;}
+  #topbar-l{flex:8;display:flex;align-items:center;justify-content:space-between;
+    padding:5px 12px;}
+  #topbar-r{flex:2;display:flex;align-items:center;justify-content:space-between;padding:5px 12px 5px 36px;}
+  body::after{content:"";position:fixed;top:0;bottom:0;left:80%;width:1px;background:rgba(255,200,100,.18);pointer-events:none;z-index:100;}
+  #topbar-r h2{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
+  #topbar-r h2 small{display:block;font-size:1.2vw;color:#b8a884;}
+  #topbar h1{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
+  #topbar h1 small{display:block;font-size:1.2vw;color:#b8a884;}
+  #info{display:flex;gap:6px;align-items:center;font-size:1.0vw;}
+  #info .t{color:#ff9a5a;font-weight:bold;}
+  #info .upd{color:#9aaa8a;font-size:1.0vw;}
+  #info span:first-child{color:#f0e6cf;font-weight:bold;}
+  .connbadge{font-size:0.85vw;font-weight:bold;padding:2px 6px;border-radius:10px;}
+  .connbadge.ok{color:#8fe39a;background:rgba(40,120,60,.35);}
+  .connbadge.warn{color:#ffd24a;background:rgba(150,110,20,.45);}
+  .connbadge.ng{color:#ff8f7a;background:rgba(150,40,30,.5);
+    animation:blink 1.4s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+
+  /* ── メインエリア ── */
+  #main-row{display:flex;flex:1;overflow:hidden;}
+
+  /* ── 左: 露天風呂 ── */
+  #wrap{position:relative;flex:8;overflow:hidden;background:#2c380b;}
+  #wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pin{position:absolute;transform:translate(-50%,-100%);
+    background:var(--lc,rgba(10,16,8,.85));border:2px solid rgba(255,255,255,.6);
+    border-radius:10px;padding:4px 10px;text-align:center;white-space:nowrap;
+    box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
+  .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
+  .pin .nm{font-size:var(--pin-nm,1.2vw);color:#fff;font-weight:bold;}
+  .pin .tp{font-size:var(--pin-tp,1.9vw);font-weight:800;color:#FFD700;}
+  .pin.sm .nm{font-size:var(--pin-sm-nm,1.1vw);}
+  .pin.sm .tp{font-size:var(--pin-sm-tp,1.6vw);color:#FFD700;}
+  .pin.lg .nm{font-size:var(--pin-lg-nm,1.4vw);}
+  .pin.lg .tp{font-size:var(--pin-lg-tp,2.3vw);color:#FFD700;}
+  .line{position:absolute;transform:translateX(-50%);width:3px;
+    background:rgba(255,255,255,0.55);pointer-events:none;}
+  .pin.stale{border-style:dashed;opacity:.9;}
+  .pin .old{font-size:.36vw;color:#ffd24a;font-weight:bold;display:block;}
+  .dot{position:absolute;transform:translate(-50%,-50%);
+    width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
+  #right-panel{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
+  #yugata{font-size:2.3vw;font-weight:900;letter-spacing:.35em;
+    background:linear-gradient(180deg,#fff9e6 0%,#FFD700 45%,#FF6B00 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));
+    animation:yugata-pulse 3s ease-in-out infinite;pointer-events:none;}
+  @keyframes yugata-pulse{
+    0%,100%{filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));}
+    50%{filter:drop-shadow(0 0 28px rgba(255,210,0,1)) drop-shadow(0 0 60px rgba(255,130,0,.8));}
+  }
+  #legend{background:rgba(10,18,8,.6);color:#dfd5b8;padding:6px 10px;
+    border-radius:9px;font-size:0.65vw;}
+  #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;}
+  #legend .d{width:10px;height:10px;border-radius:3px;}
+
+  /* ── 右: 大浴場 ── */
+  #daiyokujo{
+    flex:2;
+    display:flex;
+    flex-direction:column;
+    background:#080f06;
+  }
+  #daiyu-cards{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:16px 14px;
+  }
+  .bath-card{
+    flex:1;
+    background:rgba(45,72,28,.92);
+    border:2px solid rgba(255,220,120,.30);
+    border-radius:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    position:relative;
+    overflow:hidden;
+  }
+  .bath-card::before{
+    content:"";
+    position:absolute;inset:0;
+    background:var(--bc, rgba(255,180,0,.04));
+    pointer-events:none;
+  }
+  .bath-card.stale{border-style:dashed;opacity:.85;}
+  .bath-card .card-label{
+    font-size:1.4vw;color:#b8a884;font-weight:bold;letter-spacing:.12em;
+  }
+  .bath-card .card-name{
+    font-size:2.2vw;color:#f0e6cf;font-weight:900;letter-spacing:.08em;
+  }
+  .bath-card .card-temp{
+    font-size:3.5vw;font-weight:800;color:#FFD700;
+    line-height:1;letter-spacing:.04em;
+  }
+  .bath-card .card-upd{
+    font-size:.85vw;color:#ffd24a;
+  }
+  #clock{
+    padding:8px 16px;
+    background:rgba(10,18,8,.8);
+    color:#f0e6cf;font-weight:bold;letter-spacing:.06em;
+    font-variant-numeric:tabular-nums;text-align:right;
+    border-top:1px solid rgba(255,200,100,.1);
+    flex-shrink:0;
+  }
+  #clock .date{font-size:1.6vw;display:block;color:#b8a884;margin-bottom:2px;}
+  #clock .time{font-size:2.6vw;display:block;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="topbar-l">
+    <h1>♨ 露天風呂「湯畑」温度マップ<small>山中温泉 花つばき</small></h1>
+    <div id="info">
+      <span>📍石川県加賀市</span>
+      <span class="t" id="at">--.-℃</span>
+      <span class="upd" id="upd"></span>
+      <span id="conn" class="connbadge ok">🟢 接続中</span>
+    </div>
+  </div>
+  <div id="topbar-r">
+    <h2>♨ 大浴場<small>山中温泉 花つばき</small></h2>
+    <span id="conn2" class="connbadge ok">🟢 接続中</span>
+  </div>
+</div>
+
+<div id="main-row">
+
+  <!-- ── 左: 露天風呂 ── -->
+  <div id="wrap">
+    <img src="/static/cut.png" id="photo" alt="湯畑"/>
+    <div id="pins"></div>
+    <div id="right-panel">
+      <div id="yugata">湯畑/Yubatake</div>
+      <div id="legend">
+        <div class="r"><span class="d" style="background:#9b1111"></span>40℃以上</div>
+        <div class="r"><span class="d" style="background:#d64034"></span>36〜40℃</div>
+        <div class="r"><span class="d" style="background:#e07a5f"></span>36℃未満</div>
+        <div class="r"><span class="d" style="background:#3a90d8"></span>立湯・座湯</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 右: 大浴場 ── -->
+  <div id="daiyokujo">
+    <div id="daiyu-cards">
+      <div class="bath-card" id="card-20">
+        <div class="card-label">男湯</div>
+        <div class="card-name">大浴場</div>
+        <div class="card-temp" id="temp-20">--.-℃</div>
+        <div class="card-upd" id="upd-20"></div>
+      </div>
+      <div class="bath-card" id="card-21">
+        <div class="card-label">女湯</div>
+        <div class="card-name">大浴場</div>
+        <div class="card-temp" id="temp-21">--.-℃</div>
+        <div class="card-upd" id="upd-21"></div>
+      </div>
+    </div>
+    <div id="clock">--:--:--</div>
+  </div>
+
+</div>
+
+<script>
+// ── 露天風呂スポット定義 ──
+const SPOTS = [
+  { id:1, name:"高めの湯",  u:0.16, v:0.57 },
+  { id:2, name:"ぬるめの湯",u:0.27, v:0.55 },
+  { id:3, name:"低めの湯",  u:0.35, v:0.49 },
+  { id:6, name:"立湯",      u:0.51, v:0.48, lg:true },
+  { id:5, name:"座湯",      u:0.49, v:0.75, lg:true },
+];
+
+// ── 大浴場スポット定義 ──
+const DAIYU_SPOTS = [
+  { id:20, label:"男湯" },
+  { id:21, label:"女湯" },
+];
+
+const BLUE_ONLY = new Set([5, 6]);
+function tempColor(id, t){
+  if(t==null) return 'rgba(90,100,86,.85)';
+  if(BLUE_ONLY.has(id)) return 'rgba(58,144,216,.9)';
+  if(t>=40) return 'rgba(155,17,17,.92)';
+  if(t>=36) return 'rgba(214,64,52,.92)';
+  return 'rgba(224,122,95,.92)';
+}
+function tempColorDaiyu(t){
+  if(t==null) return null;
+  if(t>=42) return 'rgba(155,17,17,.12)';
+  if(t>=38) return 'rgba(214,64,52,.10)';
+  if(t>=34) return 'rgba(224,122,95,.10)';
+  return 'rgba(58,144,216,.10)';
+}
+function tempTextColor(t){
+  if(t==null) return '#FFD700';
+  if(t>=42) return '#ff6b6b';
+  if(t>=38) return '#FFD700';
+  if(t>=34) return '#ffa07a';
+  return '#7ab8e0';
+}
+
+const DAIYU_IDS = new Set([20, 21]);
+let tempMap={}, staleMap={}, atMap={}, isOnline=true;
+let daiTempMap={}, daiStaleMap={}, daiAtMap={};
+
+function fmtAt(iso){
+  if(!iso) return '';
+  const d=new Date(iso), p=n=>String(n).padStart(2,'0');
+  const now=new Date();
+  const sameDay=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  return sameDay?`最終 ${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// ── 露天風呂レンダリング ──
+function render(){
+  const wrap=document.getElementById('wrap');
+  const img=document.getElementById('photo');
+  const pinsEl=document.getElementById('pins');
+  const iw=img.naturalWidth||1368, ih=img.naturalHeight||796;
+  const bw=wrap.clientWidth, bh=wrap.clientHeight;
+  const scale=Math.max(bw/iw, bh/ih);
+  const dw=iw*scale, dh=ih*scale;
+  const ox=(bw-dw)/2, oy=(bh-dh)/2;
+
+  // ピンサイズを画像の実表示幅に比例させる
+  const p=dw/100;
+  const r=document.documentElement;
+  r.style.setProperty('--pin-nm',   (p*1.55).toFixed(1)+'px');
+  r.style.setProperty('--pin-tp',   (p*2.50).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-nm',(p*1.35).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-tp',(p*2.10).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-nm',(p*1.75).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-tp',(p*2.90).toFixed(1)+'px');
+  const lineH=Math.round(p*4.8);
+
+  let html='';
+  for(const s of SPOTS){
+    const px=ox+s.u*dw, py=oy+s.v*dh;
+    const t=tempMap[s.id];
+    const lc=tempColor(s.id, t);
+    const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
+    const isStale=!isOnline||staleMap[s.id];
+    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
+    html+=`<div class="line" style="left:${px}px;top:${py-lineH}px;height:${lineH}px;background:${lc};opacity:.7"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-lineH}px;--lc:${lc}">
+      <div class="nm">${s.name}</div>
+      <div class="tp">${label}</div>
+      ${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
+    </div>`;
+  }
+  pinsEl.innerHTML=html;
+}
+
+// ── 大浴場レンダリング ──
+function renderDaiyu(){
+  for(const s of DAIYU_SPOTS){
+    const t=daiTempMap[s.id];
+    const card=document.getElementById(`card-${s.id}`);
+    const tempEl=document.getElementById(`temp-${s.id}`);
+    const updEl=document.getElementById(`upd-${s.id}`);
+    if(!card||!tempEl) continue;
+    const label=t!=null?`${Number(t).toFixed(1)}℃`:'--.-℃';
+    tempEl.textContent=label;
+    tempEl.style.color=tempTextColor(t);
+    const bc=tempColorDaiyu(t);
+    card.style.setProperty('--bc', bc||'rgba(255,180,0,.04)');
+    const isStale=!isOnline||daiStaleMap[s.id];
+    card.classList.toggle('stale', isStale);
+    if(updEl) updEl.textContent=isStale&&daiAtMap[s.id]?`⚠ ${fmtAt(daiAtMap[s.id])}`:'';
+  }
+}
+
+function setConn(online, anyStale){
+  const el=document.getElementById('conn');
+  if(!online){ el.className='connbadge ng'; el.textContent='🔴 未接続（表示は最終値）'; }
+  else if(anyStale){ el.className='connbadge warn'; el.textContent='🟡 一部未取得'; }
+  else{ el.className='connbadge ok'; el.textContent='🟢 接続中'; }
+}
+
+function setConn2(online, anyStale){
+  const el=document.getElementById('conn2');
+  if(!online){ el.className='connbadge ng'; el.textContent='🔴 未接続'; }
+  else if(anyStale){ el.className='connbadge warn'; el.textContent='🟡 一部未取得'; }
+  else{ el.className='connbadge ok'; el.textContent='🟢 接続中'; }
+}
+
+let lastUpdated=null, lastOnline=null, lastAttempt=null;
+async function load(){
+  try{
+    const res=await fetch('/api/baths');
+    const data=await res.json();
+    const online=data.online!==false;
+    if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
+    lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
+    tempMap={}; staleMap={}; atMap={};
+    daiTempMap={}; daiStaleMap={}; daiAtMap={};
+    for(const b of data.baths){
+      if(DAIYU_IDS.has(b.id)){
+        daiTempMap[b.id]=b.temp; daiStaleMap[b.id]=b.stale; daiAtMap[b.id]=b.at;
+      } else {
+        tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at;
+      }
+    }
+    const anyStale=data.baths.filter(b=>!DAIYU_IDS.has(b.id)).some(b=>b.stale);
+    const daiAnyStale=data.baths.filter(b=>DAIYU_IDS.has(b.id)).some(b=>b.stale);
+    const amb=data.gateway;
+    if(amb&&amb.temp!=null){
+      document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
+    }
+    setConn(isOnline, anyStale);
+    setConn2(isOnline, daiAnyStale);
+    if(data.last_updated){
+      const d=new Date(data.last_updated),p=n=>String(n).padStart(2,'0');
+      const label=online?'最終更新':'最終取得';
+      document.getElementById('upd').textContent=`${label} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    render();
+    renderDaiyu();
+  }catch(e){
+    isOnline=false; lastOnline=false; setConn(false); setConn2(false, false); render(); renderDaiyu();
+  }
+}
+
+document.getElementById('photo').onload=render;
+window.addEventListener('resize',render);
+render();
+load();
+setInterval(load,10000);
+
+function updateClock(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const days=['日','月','火','水','木','金','土'];
+  const date=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}（${days[d.getDay()]}）`;
+  const time=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  document.getElementById('clock').innerHTML=`<span class="date">${date}</span><span class="time">${time}</span>`;
+}
+updateClock();
+setInterval(updateClock,1000);
+</script>
+</body>
+</html>

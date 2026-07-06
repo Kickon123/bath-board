@@ -235,6 +235,11 @@ def bath_all():
 def board_all_75():
     return send_from_directory("static", "base-all-75.html")
 
+@app.get("/allcut")
+@app.get("/base-all-cut")
+def board_all_cut():
+    return send_from_directory("static", "base-all-cut.html")
+
 @app.get("/kanri")
 def kanri():
     return send_from_directory("static", "staff.html")
