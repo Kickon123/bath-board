@@ -13,7 +13,9 @@
   #topbar{display:flex;align-items:stretch;background:rgba(10,18,8,.8);flex-shrink:0;}
   #topbar-l{flex:75;display:flex;align-items:center;justify-content:space-between;
     padding:5px 12px;border-right:1px solid rgba(255,200,100,.15);}
-  #topbar-r{flex:25;}
+  #topbar-r{flex:25;display:flex;align-items:center;justify-content:space-between;padding:5px 12px;}
+  #topbar-r h2{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
+  #topbar-r h2 small{display:block;font-size:1.2vw;color:#b8a884;}
   #topbar h1{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
   #topbar h1 small{display:block;font-size:1.2vw;color:#b8a884;}
   #info{display:flex;gap:6px;align-items:center;font-size:1.0vw;}
@@ -75,15 +77,6 @@
     background:#080f06;
     border-left:1px solid rgba(255,200,100,.18);
   }
-  #daiyu-header{
-    padding:10px 16px;
-    background:rgba(10,18,8,.85);
-    border-bottom:1px solid rgba(255,200,100,.15);
-    display:flex;align-items:center;justify-content:space-between;
-    flex-shrink:0;
-  }
-  #daiyu-header h2{color:#f0e6cf;font-size:1.8vw;letter-spacing:.1em;}
-  #daiyu-header h2 small{display:block;font-size:1.2vw;color:#b8a884;}
   #daiyu-cards{
     flex:25;
     display:flex;
@@ -148,7 +141,10 @@
       <span id="conn" class="connbadge ok">🟢 接続中</span>
     </div>
   </div>
-  <div id="topbar-r"></div>
+  <div id="topbar-r">
+    <h2>♨ 大浴場<small>山中温泉 花つばき</small></h2>
+    <span id="conn2" class="connbadge ok">🟢 接続中</span>
+  </div>
 </div>
 
 <div id="main-row">
@@ -170,10 +166,6 @@
 
   <!-- ── 右: 大浴場 ── -->
   <div id="daiyokujo">
-    <div id="daiyu-header">
-      <h2>♨ 大浴場<small>山中温泉 花つばき</small></h2>
-      <span id="conn2" class="connbadge ok">🟢 接続中</span>
-    </div>
     <div id="daiyu-cards">
       <div class="bath-card" id="card-20">
         <div class="card-label">男湯</div>
