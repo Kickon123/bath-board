@@ -217,17 +217,15 @@ function tempColor(id, t){
 }
 function tempColorDaiyu(t){
   if(t==null) return null;
-  if(t>=42) return 'rgba(155,17,17,.12)';
-  if(t>=38) return 'rgba(214,64,52,.10)';
-  if(t>=34) return 'rgba(224,122,95,.10)';
-  return 'rgba(58,144,216,.10)';
+  if(t>=40) return 'rgba(155,17,17,.12)';
+  if(t>=36) return 'rgba(214,64,52,.10)';
+  return 'rgba(224,122,95,.10)';
 }
 function tempTextColor(t){
   if(t==null) return '#FFD700';
-  if(t>=42) return '#ff6b6b';
-  if(t>=38) return '#FFD700';
-  if(t>=34) return '#ffa07a';
-  return '#7ab8e0';
+  if(t>=40) return '#ff6b6b';
+  if(t>=36) return '#FFD700';
+  return '#ffa07a';
 }
 
 const DAIYU_IDS = new Set([20, 21]);
