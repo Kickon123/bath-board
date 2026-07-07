@@ -27,16 +27,12 @@
   #main{flex:1;display:flex;flex-direction:column;gap:16px;padding:20px 24px;overflow:hidden;}
   .bath-card{
     flex:1;
-    background:rgba(18,30,12,.95);
-    border:2px solid rgba(255,255,255,.15);
+    background:var(--bc, rgba(18,30,12,.95));
+    border:2px solid rgba(255,255,255,.6);
     border-radius:20px;
     display:flex;flex-direction:column;
     align-items:center;justify-content:center;
     gap:10px;position:relative;overflow:hidden;
-  }
-  .bath-card::before{
-    content:"";position:absolute;inset:0;
-    background:var(--bc, rgba(255,180,0,.04));pointer-events:none;
   }
   .bath-card.stale{border-style:dashed;opacity:.85;}
   .bath-card .card-label{font-size:2.0vw;color:#b8a884;font-weight:bold;letter-spacing:.15em;}
@@ -96,16 +92,13 @@ function fmtAt(iso){
 }
 
 function tempColorDaiyu(t){
-  if(t==null) return null;
-  if(t>=40) return 'rgba(155,17,17,.12)';
-  if(t>=36) return 'rgba(214,64,52,.10)';
-  return 'rgba(224,122,95,.10)';
+  if(t==null) return 'rgba(90,100,86,.85)';
+  if(t>=40) return 'rgba(155,17,17,.92)';
+  if(t>=36) return 'rgba(214,64,52,.92)';
+  return 'rgba(224,122,95,.92)';
 }
 function tempTextColor(t){
-  if(t==null) return '#FFD700';
-  if(t>=40) return '#ff6b6b';
-  if(t>=36) return '#FFD700';
-  return '#ffa07a';
+  return '#FFD700';
 }
 
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
@@ -119,7 +112,7 @@ function renderDaiyu(){
     if(!card||!tempEl) continue;
     tempEl.textContent=t!=null?`${Number(t).toFixed(1)}℃`:'--.-℃';
     tempEl.style.color=tempTextColor(t);
-    card.style.setProperty('--bc', tempColorDaiyu(t)||'rgba(255,180,0,.04)');
+    card.style.setProperty('--bc', tempColorDaiyu(t));
     const isStale=!isOnline||staleMap[id];
     card.classList.toggle('stale', isStale);
     if(updEl) updEl.textContent=isStale&&atMap[id]?`⚠ ${fmtAt(atMap[id])}`:'';

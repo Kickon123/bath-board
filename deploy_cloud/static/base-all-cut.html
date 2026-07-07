@@ -87,8 +87,8 @@
   }
   .bath-card{
     flex:1;
-    background:rgba(45,72,28,.92);
-    border:2px solid rgba(255,220,120,.30);
+    background:var(--bc, rgba(45,72,28,.92));
+    border:2px solid rgba(255,255,255,.6);
     border-radius:16px;
     display:flex;
     flex-direction:column;
@@ -97,12 +97,6 @@
     gap:8px;
     position:relative;
     overflow:hidden;
-  }
-  .bath-card::before{
-    content:"";
-    position:absolute;inset:0;
-    background:var(--bc, rgba(255,180,0,.04));
-    pointer-events:none;
   }
   .bath-card.stale{border-style:dashed;opacity:.85;}
   .bath-card .card-label{
@@ -215,12 +209,6 @@ function tempColor(id, t){
   if(t>=36) return 'rgba(214,64,52,.92)';
   return 'rgba(224,122,95,.92)';
 }
-function tempColorDaiyu(t){
-  if(t==null) return null;
-  if(t>=40) return 'rgba(155,17,17,.45)';
-  if(t>=36) return 'rgba(214,64,52,.38)';
-  return 'rgba(224,122,95,.32)';
-}
 function tempTextColor(t){
   return '#FFD700';
 }
@@ -297,8 +285,7 @@ function renderDaiyu(){
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'--.-℃';
     tempEl.textContent=label;
     tempEl.style.color=tempTextColor(t);
-    const bc=tempColorDaiyu(t);
-    card.style.setProperty('--bc', bc||'rgba(255,180,0,.04)');
+    card.style.setProperty('--bc', tempColor(s.id, t));
     const isStale=!isOnline||daiStaleMap[s.id];
     card.classList.toggle('stale', isStale);
     if(updEl) updEl.textContent=isStale&&daiAtMap[s.id]?`⚠ ${fmtAt(daiAtMap[s.id])}`:'';
