@@ -48,7 +48,7 @@
   .line{position:absolute;transform:translateX(-50%);width:3px;
     background:rgba(255,255,255,0.55);pointer-events:none;}
   .pin.stale{border-style:dashed;opacity:.9;}
-  .pin .old{font-size:.36vw;color:#ffd24a;font-weight:bold;display:block;}
+  .pin .old{font-size:.55vw;color:#ffd24a;font-weight:bold;display:block;}
   .dot{position:absolute;transform:translate(-50%,-50%);
     width:calc(9px * var(--pin-scale,1));height:calc(9px * var(--pin-scale,1));
     border-radius:50%;border:2px solid rgba(255,255,255,.7);}
@@ -232,11 +232,11 @@ let tempMap={}, staleMap={}, atMap={}, isOnline=true;
 let daiTempMap={}, daiStaleMap={}, daiAtMap={};
 
 function fmtAt(iso){
-  if(!iso) return '';
+  if(!iso) return '時刻不明';
   const d=new Date(iso), p=n=>String(n).padStart(2,'0');
   const now=new Date();
   const sameDay=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
-  return sameDay?`最終 ${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return sameDay?`${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 // ── 露天風呂レンダリング ──
