@@ -100,17 +100,17 @@
   }
   .bath-card.stale{border-style:dashed;opacity:.85;}
   .bath-card .card-label{
-    font-size:1.4vw;color:#b8a884;font-weight:bold;letter-spacing:.12em;
+    font-size:calc(1.4vw * var(--card-scale,1));color:#b8a884;font-weight:bold;letter-spacing:.12em;
   }
   .bath-card .card-name{
-    font-size:2.2vw;color:#f0e6cf;font-weight:900;letter-spacing:.08em;
+    font-size:calc(2.2vw * var(--card-scale,1));color:#f0e6cf;font-weight:900;letter-spacing:.08em;
   }
   .bath-card .card-temp{
-    font-size:3.5vw;font-weight:800;color:#FFD700;
+    font-size:calc(3.5vw * var(--card-scale,1));font-weight:800;color:#FFD700;
     line-height:1;letter-spacing:.04em;
   }
   .bath-card .card-upd{
-    font-size:.85vw;color:#ffd24a;
+    font-size:calc(.85vw * var(--card-scale,1));color:#ffd24a;
   }
   #clock{
     padding:8px 16px;
@@ -195,6 +195,11 @@ const FLOATS = [
   { key:"legend", name:"温度範囲", u:0.862, v:0.405 },
 ];
 
+// ── ピン・大浴場カードの大きさ（CMSから調整）──
+const PIN_SCALE = 1;
+const CARD_SCALE = 1;
+document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
+
 // ── 大浴場スポット定義 ──
 const DAIYU_SPOTS = [
   { id:20, label:"男湯" },
@@ -240,12 +245,12 @@ function render(){
   // ピンサイズを画像の実表示幅に比例させる
   const p=dw/100;
   const r=document.documentElement;
-  r.style.setProperty('--pin-nm',   (p*2.05).toFixed(1)+'px');
-  r.style.setProperty('--pin-tp',   (p*3.30).toFixed(1)+'px');
-  r.style.setProperty('--pin-sm-nm',(p*1.80).toFixed(1)+'px');
-  r.style.setProperty('--pin-sm-tp',(p*2.85).toFixed(1)+'px');
-  r.style.setProperty('--pin-lg-nm',(p*2.30).toFixed(1)+'px');
-  r.style.setProperty('--pin-lg-tp',(p*3.80).toFixed(1)+'px');
+  r.style.setProperty('--pin-nm',   (p*2.05*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-tp',   (p*3.30*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-nm',(p*1.80*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
   const lineH=Math.round(p*4.8);
 
   let html='';

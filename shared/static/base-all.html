@@ -39,21 +39,21 @@
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
-  .pin .nm{font-size:0.9vw;color:#fff;font-weight:bold;}
-  .pin .tp{font-size:1.4vw;font-weight:800;color:#FFD700;}
-  .pin.sm .nm{font-size:0.85vw;}
-  .pin.sm .tp{font-size:1.15vw;color:#FFD700;}
-  .pin.lg .nm{font-size:1.05vw;}
-  .pin.lg .tp{font-size:1.75vw;color:#FFD700;}
+  .pin .nm{font-size:calc(0.9vw * var(--pin-scale,1));color:#fff;font-weight:bold;}
+  .pin .tp{font-size:calc(1.4vw * var(--pin-scale,1));font-weight:800;color:#FFD700;}
+  .pin.sm .nm{font-size:calc(0.85vw * var(--pin-scale,1));}
+  .pin.sm .tp{font-size:calc(1.15vw * var(--pin-scale,1));color:#FFD700;}
+  .pin.lg .nm{font-size:calc(1.05vw * var(--pin-scale,1));}
+  .pin.lg .tp{font-size:calc(1.75vw * var(--pin-scale,1));color:#FFD700;}
   .line{position:absolute;transform:translateX(-50%);width:3px;
     background:rgba(255,255,255,0.55);pointer-events:none;}
   .pin.stale{border-style:dashed;opacity:.9;}
   .pin .old{font-size:.36vw;color:#ffd24a;font-weight:bold;display:block;}
   .dot{position:absolute;transform:translate(-50%,-50%);
-    width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
-  #right-panel{position:absolute;right:12px;top:50%;transform:translateY(-50%);
-    display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
-  #yugata{font-size:2.3vw;font-weight:900;letter-spacing:.35em;
+    width:calc(9px * var(--pin-scale,1));height:calc(9px * var(--pin-scale,1));
+    border-radius:50%;border:2px solid rgba(255,255,255,.7);}
+  #yugata{position:absolute;transform:translate(-50%,-50%);
+    font-size:2.3vw;font-weight:900;letter-spacing:.35em;white-space:nowrap;
     background:linear-gradient(180deg,#fff9e6 0%,#FFD700 45%,#FF6B00 100%);
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
     filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));
@@ -62,9 +62,11 @@
     0%,100%{filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));}
     50%{filter:drop-shadow(0 0 28px rgba(255,210,0,1)) drop-shadow(0 0 60px rgba(255,130,0,.8));}
   }
-  #legend{background:rgba(10,18,8,.6);color:#dfd5b8;padding:6px 10px;
+  #legend{position:absolute;transform:translate(-50%,-50%);
+    width:max-content;
+    background:rgba(10,18,8,.6);color:#dfd5b8;padding:6px 10px;
     border-radius:9px;font-size:0.65vw;}
-  #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;}
+  #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;white-space:nowrap;}
   #legend .d{width:10px;height:10px;border-radius:3px;}
 
   /* ── 右: 大浴場 ── */
@@ -106,17 +108,17 @@
   }
   .bath-card.stale{border-style:dashed;opacity:.85;}
   .bath-card .card-label{
-    font-size:1.4vw;color:#b8a884;font-weight:bold;letter-spacing:.12em;
+    font-size:calc(1.4vw * var(--card-scale,1));color:#b8a884;font-weight:bold;letter-spacing:.12em;
   }
   .bath-card .card-name{
-    font-size:2.2vw;color:#f0e6cf;font-weight:900;letter-spacing:.08em;
+    font-size:calc(2.2vw * var(--card-scale,1));color:#f0e6cf;font-weight:900;letter-spacing:.08em;
   }
   .bath-card .card-temp{
-    font-size:4.5vw;font-weight:800;color:#FFD700;
+    font-size:calc(4.5vw * var(--card-scale,1));font-weight:800;color:#FFD700;
     line-height:1;letter-spacing:.04em;
   }
   .bath-card .card-upd{
-    font-size:.85vw;color:#ffd24a;
+    font-size:calc(.85vw * var(--card-scale,1));color:#ffd24a;
   }
   #clock{
     padding:8px 16px;
@@ -151,14 +153,12 @@
   <div id="wrap">
     <img src="/static/yubatake.png" id="photo" alt="湯畑"/>
     <div id="pins"></div>
-    <div id="right-panel">
-      <div id="yugata">湯畑/Yubatake</div>
-      <div id="legend">
-        <div class="r"><span class="d" style="background:#9b1111"></span>40℃以上</div>
-        <div class="r"><span class="d" style="background:#d64034"></span>36〜40℃</div>
-        <div class="r"><span class="d" style="background:#e07a5f"></span>36℃未満</div>
-        <div class="r"><span class="d" style="background:#3a90d8"></span>立湯・座湯</div>
-      </div>
+    <div id="yugata">湯畑/Yubatake</div>
+    <div id="legend">
+      <div class="r"><span class="d" style="background:#9b1111"></span>40℃以上</div>
+      <div class="r"><span class="d" style="background:#d64034"></span>36〜40℃</div>
+      <div class="r"><span class="d" style="background:#e07a5f"></span>36℃未満</div>
+      <div class="r"><span class="d" style="background:#3a90d8"></span>立湯・座湯</div>
     </div>
   </div>
 
@@ -196,6 +196,18 @@ const SPOTS = [
   { id:6, name:"立湯",      u:0.51, v:0.48, lg:true },
   { id:5, name:"座湯",      u:0.49, v:0.75, lg:true },
 ];
+
+// ── 移動可能な表示要素（湯畑文字・温度範囲の表）──
+const FLOATS = [
+  { key:"yugata", name:"湯畑文字", u:0.90, v:0.42 },
+  { key:"legend", name:"温度範囲", u:0.90, v:0.60 },
+];
+
+// ── ピン・大浴場カードの大きさ（CMSから調整）──
+const PIN_SCALE = 1;
+const CARD_SCALE = 1;
+document.documentElement.style.setProperty('--pin-scale', PIN_SCALE);
+document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
 
 // ── 大浴場スポット定義 ──
 const DAIYU_SPOTS = [
@@ -254,6 +266,12 @@ function render(){
     </div>`;
   }
   pinsEl.innerHTML=html;
+
+  // 移動可能な表示要素（湯畑文字・温度範囲）の位置を反映
+  for(const f of FLOATS){
+    const el=document.getElementById(f.key);
+    if(el){ el.style.left=(ox+f.u*dw)+'px'; el.style.top=(oy+f.v*dh)+'px'; }
+  }
 }
 
 // ── 大浴場レンダリング ──
