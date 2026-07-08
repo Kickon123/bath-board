@@ -190,21 +190,21 @@
 <script>
 // ── 露天風呂スポット定義 ──
 const SPOTS = [
-  { id:1, name:"高めの湯",  u:0.16, v:0.57 },
-  { id:2, name:"ぬるめの湯",u:0.25, v:0.55 },
-  { id:3, name:"低めの湯",  u:0.35, v:0.49 },
-  { id:6, name:"立湯",      u:0.51, v:0.48, lg:true },
-  { id:5, name:"座湯",      u:0.49, v:0.75, lg:true },
+  { id:1, name:"高めの湯", u:0.160, v:0.570 },
+  { id:2, name:"ぬるめの湯", u:0.250, v:0.550 },
+  { id:3, name:"低めの湯", u:0.350, v:0.490 },
+  { id:6, name:"立湯", u:0.510, v:0.480, lg:true, blue:true },
+  { id:5, name:"座湯", u:0.490, v:0.750, lg:true, blue:true },
 ];
 
 // ── 移動可能な表示要素（湯畑文字・温度範囲の表）──
 const FLOATS = [
-  { key:"yugata", name:"湯畑文字", u:0.90, v:0.42 },
-  { key:"legend", name:"温度範囲", u:0.90, v:0.60 },
+  { key:"yugata", name:"湯畑文字", u:0.835, v:0.319 },
+  { key:"legend", name:"温度範囲", u:0.900, v:0.600 },
 ];
 
 // ── ピン・大浴場カードの大きさ（CMSから調整）──
-const PIN_SCALE = 1;
+const PIN_SCALE = 0.75;
 const CARD_SCALE = 1;
 document.documentElement.style.setProperty('--pin-scale', PIN_SCALE);
 document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
@@ -215,7 +215,7 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-const BLUE_ONLY = new Set([5, 6]);
+const BLUE_ONLY = new Set([6, 5]);
 function tempColor(id, t){
   if(t==null) return 'rgba(90,100,86,.85)';
   if(BLUE_ONLY.has(id)) return 'rgba(58,144,216,.9)';
