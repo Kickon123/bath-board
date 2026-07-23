@@ -211,7 +211,11 @@ const DAIYU_SPOTS = [
 ];
 
 const TEMP_MIN = 20, TEMP_MAX = 40;
-// 20℃(青,hue240)→40℃(赤,hue0) をHSL色相で線形補間
+// 20℃(青,hue240)→40℃(クリムゾン,hue-30) をHSL色相で線形補間。
+// 青・赤端は彩度82%を保ちつつ、中間(緑,hue120付近)だけ彩度30%まで落として緑の主張を抑える。
+const HUE_START = 240, HUE_END = -30;
+const SAT_EDGE = 82, SAT_DIP = 30, SAT_DIP_POW = 2;
+const GRAD_LIGHT = 52;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
   const k=n=>(n+h/30)%12;
@@ -222,8 +226,10 @@ function hslToRgb(h,s,l){
 function tempGradRgb(t){
   const clamped=Math.max(TEMP_MIN,Math.min(TEMP_MAX,t));
   const f=(clamped-TEMP_MIN)/(TEMP_MAX-TEMP_MIN);
-  const hue=240-240*f;
-  return hslToRgb(hue,72,52);
+  const hue=HUE_START-(HUE_START-HUE_END)*f;
+  const dip=Math.pow(Math.sin(Math.PI*f), SAT_DIP_POW);
+  const sat=SAT_EDGE-(SAT_EDGE-SAT_DIP)*dip;
+  return hslToRgb(hue,sat,GRAD_LIGHT);
 }
 function tempColor(id, t){
   if(t==null) return 'rgba(90,100,86,.85)';
