@@ -66,10 +66,14 @@
   }
   #legend{position:absolute;transform:translate(-50%,-50%);
     width:max-content;
-    background:rgba(10,18,8,.6);color:#dfd5b8;padding:6px 10px;
-    border-radius:9px;font-size:0.65vw;}
+    background:rgba(10,18,8,.6);color:#dfd5b8;padding:10px 14px;
+    border-radius:12px;font-size:0.9vw;}
   #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;white-space:nowrap;}
   #legend .d{width:10px;height:10px;border-radius:3px;}
+  #legend .legend-row{display:flex;align-items:stretch;gap:10px;}
+  #legend .gradbar{width:1.8vw;height:16vh;border-radius:8px;flex-shrink:0;}
+  #legend .gradlabels{display:flex;flex-direction:column;justify-content:space-between;
+    font-size:0.95vw;font-weight:bold;color:#f0e6cf;}
 
   /* ── 右: 大浴場 ── */
   #daiyokujo{
@@ -150,10 +154,10 @@
     <div id="pins"></div>
     <div id="yugata">湯畑/Yubatake</div>
     <div id="legend">
-      <div class="r"><span class="d" style="background:#9b1111"></span>40℃以上</div>
-      <div class="r"><span class="d" style="background:#d64034"></span>36〜40℃</div>
-      <div class="r"><span class="d" style="background:#e07a5f"></span>36℃未満</div>
-      <div class="r"><span class="d" style="background:#3a90d8"></span>立湯・座湯</div>
+      <div class="legend-row">
+        <div id="legend-gradbar" class="gradbar"></div>
+        <div class="gradlabels"><span>40℃+</span><span>20℃</span></div>
+      </div>
     </div>
   </div>
 
@@ -185,8 +189,8 @@ const SPOTS = [
   { id:1, name:"高めの湯", u:0.188, v:0.578 },
   { id:2, name:"ぬるめの湯", u:0.318, v:0.540 },
   { id:3, name:"低めの湯", u:0.439, v:0.492 },
-  { id:6, name:"立湯", u:0.643, v:0.455, lg:true, blue:true },
-  { id:5, name:"座湯", u:0.624, v:0.780, lg:true, blue:true },
+  { id:6, name:"立湯", u:0.643, v:0.455, lg:true },
+  { id:5, name:"座湯", u:0.624, v:0.780, lg:true },
 ];
 
 // ── 移動可能な表示要素（湯畑文字・温度範囲の表）──
@@ -206,13 +210,25 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-const BLUE_ONLY = new Set([6, 5]);
+const TEMP_MIN = 20, TEMP_MAX = 40;
+// 20℃(青,hue240)→40℃(赤,hue0) をHSL色相で線形補間
+function hslToRgb(h,s,l){
+  s/=100; l/=100;
+  const k=n=>(n+h/30)%12;
+  const a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [255*f(0),255*f(8),255*f(4)];
+}
+function tempGradRgb(t){
+  const clamped=Math.max(TEMP_MIN,Math.min(TEMP_MAX,t));
+  const f=(clamped-TEMP_MIN)/(TEMP_MAX-TEMP_MIN);
+  const hue=240-240*f;
+  return hslToRgb(hue,72,52);
+}
 function tempColor(id, t){
   if(t==null) return 'rgba(90,100,86,.85)';
-  if(BLUE_ONLY.has(id)) return 'rgba(58,144,216,.9)';
-  if(t>=40) return 'rgba(155,17,17,.92)';
-  if(t>=36) return 'rgba(214,64,52,.92)';
-  return 'rgba(224,122,95,.92)';
+  const [r,g,b]=tempGradRgb(t);
+  return `rgba(${r|0},${g|0},${b|0},.92)`;
 }
 function tempTextColor(t){
   return '#FFD700';
@@ -347,6 +363,16 @@ async function load(){
     isOnline=false; lastOnline=false; setConn(false); setConn2(false, false); render(); renderDaiyu();
   }
 }
+
+// ── 凡例グラデーションバー（20〜40℃を実際の色分けと同じ関数で描画）──
+(function(){
+  const stops=[];
+  for(let t=TEMP_MIN;t<=TEMP_MAX;t+=1){
+    const [r,g,b]=tempGradRgb(t);
+    stops.push(`rgb(${r|0},${g|0},${b|0}) ${(t-TEMP_MIN)/(TEMP_MAX-TEMP_MIN)*100}%`);
+  }
+  document.getElementById('legend-gradbar').style.background=`linear-gradient(0deg, ${stops.join(',')})`;
+})();
 
 document.getElementById('photo').onload=render;
 window.addEventListener('resize',render);
