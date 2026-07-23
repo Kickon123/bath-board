@@ -210,12 +210,12 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-const TEMP_MIN = 20, TEMP_MAX = 40;
-// 20℃(青,hue240)→40℃(クリムゾン,hue-30) をHSL色相で線形補間。
-// 青・赤端は彩度82%を保ちつつ、中間(緑,hue120付近)だけ彩度30%まで落として緑の主張を抑える。
-const HUE_START = 240, HUE_END = -30;
-const SAT_EDGE = 82, SAT_DIP = 30, SAT_DIP_POW = 2;
-const GRAD_LIGHT = 52;
+const TEMP_MIN = 22, TEMP_MAX = 40;
+// 22℃(青,hue240)→40℃(クリムゾン,hue-9) をHSL色相で線形補間。
+// 青・赤端は彩度95%を保ちつつ、中間(緑,hue120付近)だけ彩度23%まで落として緑の主張を抑える。
+const HUE_START = 240, HUE_END = -9;
+const SAT_EDGE = 95, SAT_DIP = 23, SAT_DIP_POW = 4.5;
+const GRAD_LIGHT = 50;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
   const k=n=>(n+h/30)%12;
