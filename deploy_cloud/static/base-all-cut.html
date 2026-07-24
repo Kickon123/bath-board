@@ -210,8 +210,8 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-const TEMP_MIN = 22, TEMP_MAX = 40;
-// 22℃(青,hue240)→40℃(赤,hue358) をHSL色相で補間。緑(hue120)を通らない「紫経由」の近道。
+const TEMP_MIN = 25, TEMP_MAX = 40;
+// 25℃(青,hue240)→40℃(赤,hue358) をHSL色相で補間。緑(hue120)を通らない「紫経由」の近道。
 // 青・赤端は彩度100%を保ちつつ、中間(紫,hue299付近)だけ彩度59%/明度78%まで上げて薄くする。
 // 温度→進捗はease-in-out(強さ1.5)で、両端(極端な温度)より中間帯の変化を強調する。
 const HUE_START = 240, HUE_END = 358;
