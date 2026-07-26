@@ -156,7 +156,7 @@
     <div id="legend">
       <div class="legend-row">
         <div id="legend-gradbar" class="gradbar"></div>
-        <div class="gradlabels"><span>40℃+</span><span>26℃以下</span></div>
+        <div class="gradlabels"><span>40℃+</span><span>28℃以下</span></div>
       </div>
     </div>
   </div>
@@ -210,9 +210,9 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-// 26℃以下は青固定、26〜40℃は黄橙(hue48)→深紅(hue-12)の暖色域だけで多段グラデーション。
+// 28℃以下は青固定、28〜40℃は黄橙(hue48)→深紅(hue-12)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。
-const TEMP_THRESHOLD = 26, TEMP_MAX = 40;
+const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
 const HUE_BLUE = 210, SAT_BLUE = 85;
 const HUE_WARM_START = 48, HUE_WARM_END = -12, SAT_WARM = 92;
 const GRAD_LIGHT = 50;
