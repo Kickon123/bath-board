@@ -78,7 +78,7 @@
   </div>
 </div>
 <div id="wrap">
-  <img src="/static/yubatake.png" id="photo" alt="湯畑"/>
+  <img src="/static/cut.png" id="photo" alt="湯畑"/>
   <div id="pins"></div>
   <div id="right-panel">
     <div id="yugata">湯畑/Yubatake</div>
@@ -93,13 +93,13 @@
 </div>
 
 <script>
-// yubatake.png (1514x781) 上の各湯舟の位置 (u:左0→右1, v:上0→下1)
+// cut.png (1368x796) 上の各湯舟の位置 (u:左0→右1, v:上0→下1) base-all-cut.htmlと同一
 const SPOTS = [
-  { id:1, name:"高温の湯", u:0.160, v:0.570 },
-  { id:2, name:"中温の湯", u:0.250, v:0.550 },
-  { id:3, name:"低温の湯", u:0.350, v:0.490 },
-  { id:6, name:"立湯", u:0.510, v:0.480 },
-  { id:5, name:"座湯", u:0.490, v:0.750 },
+  { id:1, name:"高温の湯", u:0.188, v:0.578 },
+  { id:2, name:"中温の湯", u:0.318, v:0.540 },
+  { id:3, name:"低温の湯", u:0.439, v:0.492 },
+  { id:6, name:"立湯", u:0.643, v:0.455 },
+  { id:5, name:"座湯", u:0.624, v:0.780 },
 ];
 
 const MARKERS = [];
@@ -144,7 +144,7 @@ function render(){
   const wrap=document.getElementById('wrap');
   const img=document.getElementById('photo');
   const pinsEl=document.getElementById('pins');
-  const iw=img.naturalWidth||1514, ih=img.naturalHeight||781;
+  const iw=img.naturalWidth||1368, ih=img.naturalHeight||796;
   const bw=wrap.clientWidth, bh=wrap.clientHeight;
   const scale=Math.max(bw/iw, bh/ih);
   const dw=iw*scale, dh=ih*scale;
