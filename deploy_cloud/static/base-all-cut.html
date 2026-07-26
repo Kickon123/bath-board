@@ -210,11 +210,12 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-// 28℃以下は青固定、28〜40℃は橙(hue22)→深紅(hue-12)の暖色域だけで多段グラデーション。
+// 28℃以下は青固定、28〜40℃は橙(hue22)→純赤(hue0)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。
+// (hue0を越えてマイナスにするとマゼンタ側に入りピンクがかるため0で止める)
 const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
 const HUE_BLUE = 210, SAT_BLUE = 85;
-const HUE_WARM_START = 22, HUE_WARM_END = -12, SAT_WARM = 92;
+const HUE_WARM_START = 22, HUE_WARM_END = 0, SAT_WARM = 92;
 const GRAD_LIGHT = 50;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
