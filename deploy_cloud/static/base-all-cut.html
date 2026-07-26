@@ -156,7 +156,7 @@
     <div id="legend">
       <div class="legend-row">
         <div id="legend-gradbar" class="gradbar"></div>
-        <div class="gradlabels"><span>40℃+</span><span>20℃</span></div>
+        <div class="gradlabels"><span>40℃+</span><span>26℃以下</span></div>
       </div>
     </div>
   </div>
@@ -210,14 +210,12 @@ const DAIYU_SPOTS = [
   { id:21, label:"女湯" },
 ];
 
-const TEMP_MIN = 25, TEMP_MAX = 40;
-// 25℃(青,hue240)→40℃(赤,hue358) をHSL色相で補間。緑(hue120)を通らない「紫経由」の近道。
-// 青・赤端は彩度100%を保ちつつ、中間(紫,hue299付近)だけ彩度59%/明度78%まで上げて薄くする。
-// 温度→進捗はease-in-out(強さ1.5)で、両端(極端な温度)より中間帯の変化を強調する。
-const HUE_START = 240, HUE_END = 358;
-const SAT_EDGE = 100, SAT_DIP = 59, LIGHT_DIP = 78, DIP_POW = 4.0;
-const LIGHT_EDGE = 50;
-const CURVE_K = 1.5;
+// 26℃以下は青固定、26〜40℃は黄橙(hue48)→深紅(hue-12)の暖色域だけで多段グラデーション。
+// 紫・緑は一切使わない「温度計」らしい2段構成。
+const TEMP_THRESHOLD = 26, TEMP_MAX = 40;
+const HUE_BLUE = 210, SAT_BLUE = 85;
+const HUE_WARM_START = 48, HUE_WARM_END = -12, SAT_WARM = 92;
+const GRAD_LIGHT = 50;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
   const k=n=>(n+h/30)%12;
@@ -225,18 +223,12 @@ function hslToRgb(h,s,l){
   const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
   return [255*f(0),255*f(8),255*f(4)];
 }
-function easeInOut(f, k){
-  return f<0.5 ? Math.pow(2*f,k)/2 : 1-Math.pow(2*(1-f),k)/2;
-}
 function tempGradRgb(t){
-  const clamped=Math.max(TEMP_MIN,Math.min(TEMP_MAX,t));
-  const rawF=(clamped-TEMP_MIN)/(TEMP_MAX-TEMP_MIN);
-  const f=easeInOut(rawF, CURVE_K);
-  const hue=HUE_START+(HUE_END-HUE_START)*f;
-  const dip=Math.pow(Math.sin(Math.PI*f), DIP_POW);
-  const sat=SAT_EDGE-(SAT_EDGE-SAT_DIP)*dip;
-  const light=LIGHT_EDGE+(LIGHT_DIP-LIGHT_EDGE)*dip;
-  return hslToRgb(hue,sat,light);
+  if(t<=TEMP_THRESHOLD) return hslToRgb(HUE_BLUE, SAT_BLUE, GRAD_LIGHT);
+  const clamped=Math.min(TEMP_MAX, t);
+  const f=(clamped-TEMP_THRESHOLD)/(TEMP_MAX-TEMP_THRESHOLD);
+  const hue=HUE_WARM_START+(HUE_WARM_END-HUE_WARM_START)*f;
+  return hslToRgb(hue, SAT_WARM, GRAD_LIGHT);
 }
 function tempColor(id, t){
   if(t==null) return 'rgba(90,100,86,.85)';
@@ -377,12 +369,13 @@ async function load(){
   }
 }
 
-// ── 凡例グラデーションバー（20〜40℃を実際の色分けと同じ関数で描画）──
+// ── 凡例グラデーションバー（実際の色分けと同じ関数で描画。閾値より少し下から表示）──
 (function(){
+  const LEGEND_MIN = TEMP_THRESHOLD - 4;
   const stops=[];
-  for(let t=TEMP_MIN;t<=TEMP_MAX;t+=1){
+  for(let t=LEGEND_MIN;t<=TEMP_MAX;t+=1){
     const [r,g,b]=tempGradRgb(t);
-    stops.push(`rgb(${r|0},${g|0},${b|0}) ${(t-TEMP_MIN)/(TEMP_MAX-TEMP_MIN)*100}%`);
+    stops.push(`rgb(${r|0},${g|0},${b|0}) ${(t-LEGEND_MIN)/(TEMP_MAX-LEGEND_MIN)*100}%`);
   }
   document.getElementById('legend-gradbar').style.background=`linear-gradient(0deg, ${stops.join(',')})`;
 })();
