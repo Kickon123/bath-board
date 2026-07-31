@@ -185,6 +185,11 @@
 
 <script>
 const EDIT_MODE=new URLSearchParams(location.search).has('edit');
+// ── ?nodaiyu で大浴場パネルを非表示にし、露天風呂を全幅表示（スライドショー埋め込み用）──
+if(new URLSearchParams(location.search).has('nodaiyu')){
+  document.getElementById('daiyokujo').style.display='none';
+  document.getElementById('wrap').style.flex='1';
+}
 // ── 露天風呂スポット定義 ──
 const SPOTS = [
   { id:1, name:"高温の湯", u:0.188, v:0.578 },
