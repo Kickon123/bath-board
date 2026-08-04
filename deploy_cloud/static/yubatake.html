@@ -31,10 +31,10 @@
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
-  .pin .nm{font-size:1.4vw;color:#fff;font-weight:bold;}
-  .pin .tp{font-size:2.2vw;font-weight:800;color:#FFD700;}
+  .pin .nm{font-size:1.4vw;color:var(--tc,#fff);font-weight:bold;}
+  .pin .tp{font-size:2.2vw;font-weight:800;color:var(--tc,#FFD700);}
   .pin.sm .nm{font-size:1.3vw;}
-  .pin.sm .tp{font-size:1.8vw;color:#FFD700;}
+  .pin.sm .tp{font-size:1.8vw;}
   .line{position:absolute;transform:translateX(-50%);width:4px;
     background:rgba(255,255,255,0.55);pointer-events:none;}
   .pin.stale{border-style:dashed;opacity:.9;}
@@ -52,14 +52,14 @@
     0%,100%{filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));}
     50%{filter:drop-shadow(0 0 28px rgba(255,210,0,1)) drop-shadow(0 0 60px rgba(255,130,0,.8));}
   }
-  #legend{background:rgba(10,18,8,.6);color:#dfd5b8;padding:9px 14px;
-    border-radius:9px;font-size:1.0vw;}
+  #legend{background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
+    border-radius:14px;font-size:1.0vw;}
   #legend .r{display:flex;gap:8px;align-items:center;margin:3px 0;}
   #legend .d{width:14px;height:14px;border-radius:4px;}
-  #legend .legend-row{display:flex;align-items:stretch;gap:10px;}
-  #legend .gradbar{width:1.8vw;height:16vh;border-radius:8px;flex-shrink:0;}
+  #legend .legend-row{display:flex;align-items:stretch;gap:14px;}
+  #legend .gradbar{width:2.8vw;height:18vh;border-radius:10px;flex-shrink:0;}
   #legend .gradlabels{display:flex;flex-direction:column;justify-content:space-between;
-    font-size:0.95vw;font-weight:bold;color:#f0e6cf;}
+    font-size:1.4vw;font-weight:bold;color:#f0e6cf;}
   #clock{background:rgba(10,18,8,.75);color:#f0e6cf;padding:8px 16px;
     border-radius:9px;font-weight:bold;letter-spacing:.06em;
     font-variant-numeric:tabular-nums;text-align:right;}
@@ -129,6 +129,23 @@ function tempColor(id, t){
   const [r,g,b]=tempGradRgb(t);
   return `rgba(${r|0},${g|0},${b|0},.92)`;
 }
+// 背景と金文字(#FFD700)のコントラスト比(WCAG方式)を計算し、読みにくい場合だけ
+// 濃色文字に切り替える。黄〜オレンジの背景で金文字が同化する問題への対処。
+function relLuminance([r,g,b]){
+  const c=[r,g,b].map(v=>{ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); });
+  return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
+}
+function contrastRatio(rgb1, rgb2){
+  const l1=relLuminance(rgb1), l2=relLuminance(rgb2);
+  const lighter=Math.max(l1,l2), darker=Math.min(l1,l2);
+  return (lighter+0.05)/(darker+0.05);
+}
+const GOLD_RGB=[255,215,0];
+function tempTextColor(t){
+  if(t==null) return '#FFD700';
+  const rgb=tempGradRgb(t);
+  return contrastRatio(GOLD_RGB, rgb)<2.5 ? '#2a1c00' : '#FFD700';
+}
 
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
 
@@ -155,11 +172,12 @@ function render(){
     const px=ox+s.u*dw, py=oy+s.v*dh;
     const t=tempMap[s.id];
     const lc=tempColor(s.id, t);
+    const tc=tempTextColor(t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
     html+=`<div class="line" style="left:${px}px;top:${py-70}px;height:70px;background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc}">
+    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc};--tc:${tc}">
       <div class="nm">${s.name}</div>
       <div class="tp">${label}</div>
       ${isStale?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
