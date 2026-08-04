@@ -11,13 +11,13 @@
 
   /* ── トップバー（テロップのみ） ── */
   #topbar{display:flex;align-items:center;background:rgba(10,18,8,.8);flex-shrink:0;
-    padding:5px 12px;}
+    padding:26px 28px;}
 
   /* ── 流れるテロップ ── */
-  #ticker-wrap{flex:1;overflow:hidden;height:3.4vw;position:relative;}
+  #ticker-wrap{flex:1;overflow:hidden;height:7.5vw;position:relative;}
   #ticker-text{display:inline-block;white-space:nowrap;padding-left:100%;
-    font-size:2.4vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
-    animation:ticker 20s linear infinite;}
+    font-size:5vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
+    animation:ticker 30s linear infinite;}
   @keyframes ticker{
     from{transform:translateX(0);}
     to{transform:translateX(-100%);}
@@ -25,13 +25,13 @@
 
   /* ── 右下: 時計 / 左下: 現在地・気温 ── */
   #corner-time, #corner-location{
-    position:fixed;bottom:14px;z-index:20;
-    background:rgba(10,18,8,.65);color:#f0e6cf;font-weight:bold;
-    padding:6px 16px;border-radius:10px;font-size:1.6vw;
+    position:fixed;bottom:22px;z-index:20;
+    background:rgba(10,18,8,.75);color:#f0e6cf;font-weight:bold;
+    padding:20px 36px;border-radius:16px;font-size:3.8vw;
     font-variant-numeric:tabular-nums;}
-  #corner-time{right:14px;}
-  #corner-location{left:14px;display:flex;gap:8px;align-items:center;}
-  #corner-location .t{color:#ff9a5a;}
+  #corner-time{right:22px;}
+  #corner-location{left:22px;display:flex;gap:16px;align-items:center;}
+  #corner-location .t{color:#fff;}
   #upd, .connbadge{display:none;}
 
   /* ── 露天風呂 ── */
@@ -44,7 +44,7 @@
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:6px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
   .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
-  .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#FFD700;}
+  .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
   .pin.sm .nm{font-size:var(--pin-sm-nm,1.4vw);}
   .pin.sm .tp{font-size:var(--pin-sm-tp,2.2vw);}
   .pin.lg .nm{font-size:var(--pin-lg-nm,1.8vw);}
@@ -125,7 +125,7 @@ const PIN_SCALE = 0.93;
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
 const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
 const HUE_BLUE = 210, SAT_BLUE = 85;
-const HUE_WARM_START = 28, HUE_WARM_END = 0, SAT_WARM = 92;
+const HUE_WARM_START = 28, HUE_WARM_END = 55, SAT_WARM = 92;
 const GRAD_LIGHT = 50;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
