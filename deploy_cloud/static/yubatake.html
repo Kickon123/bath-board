@@ -31,8 +31,8 @@
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
-  .pin .nm{font-size:1.4vw;color:var(--tc,#0d1a33);font-weight:bold;}
-  .pin .tp{font-size:2.2vw;font-weight:800;color:var(--tc,#0d1a33);}
+  .pin .nm{font-size:1.4vw;color:#fff;font-weight:bold;}
+  .pin .tp{font-size:2.2vw;font-weight:800;color:#FFD700;}
   .pin.sm .nm{font-size:1.3vw;}
   .pin.sm .tp{font-size:1.8vw;}
   .line{position:absolute;transform:translateX(-50%);width:4px;
@@ -108,7 +108,7 @@ const MARKERS = [];
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
 const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
 const HUE_BLUE = 210, SAT_BLUE = 85;
-const HUE_WARM_START = 50, HUE_WARM_END = 0, SAT_WARM = 92;
+const HUE_WARM_START = 28, HUE_WARM_END = 0, SAT_WARM = 92;
 const GRAD_LIGHT = 50;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
@@ -128,10 +128,6 @@ function tempColor(id, t){
   if(t==null) return 'rgba(90,100,86,.85)';
   const [r,g,b]=tempGradRgb(t);
   return `rgba(${r|0},${g|0},${b|0},.92)`;
-}
-// 背景色によらず濃紺で統一。全温度域(青〜黄〜赤)でコントラスト比4以上を確保できる。
-function tempTextColor(t){
-  return '#0d1a33';
 }
 
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
@@ -159,12 +155,11 @@ function render(){
     const px=ox+s.u*dw, py=oy+s.v*dh;
     const t=tempMap[s.id];
     const lc=tempColor(s.id, t);
-    const tc=tempTextColor(t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
     html+=`<div class="line" style="left:${px}px;top:${py-70}px;height:70px;background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc};--tc:${tc}">
+    html+=`<div class="pin${s.sm?' sm':''}${isStale?' stale':''}" style="left:${px}px;top:${py-70}px;--lc:${lc}">
       <div class="nm">${s.name}</div>
       <div class="tp">${label}</div>
       ${isStale?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
