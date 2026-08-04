@@ -240,6 +240,10 @@ def board_all_75():
 def board_all_cut():
     return send_from_directory("static", "base-all-cut.html")
 
+@app.get("/rotenburo")
+def rotenburo():
+    return send_from_directory("static", "rotenburo.html")
+
 @app.get("/kanri")
 def kanri():
     return send_from_directory("static", "staff.html")
