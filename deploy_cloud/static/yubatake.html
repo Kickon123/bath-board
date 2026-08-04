@@ -125,6 +125,7 @@ function tempGradRgb(t){
   return hslToRgb(hue, SAT_WARM, GRAD_LIGHT);
 }
 function tempColor(id, t){
+  if(id===6) return 'rgba(58,144,216,.9)'; // 立湯は常に青固定
   if(t==null) return 'rgba(90,100,86,.85)';
   const [r,g,b]=tempGradRgb(t);
   return `rgba(${r|0},${g|0},${b|0},.92)`;
