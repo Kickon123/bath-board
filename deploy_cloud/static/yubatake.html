@@ -31,8 +31,8 @@
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
   .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
-  .pin .nm{font-size:1.4vw;color:var(--tc,#fff);font-weight:bold;}
-  .pin .tp{font-size:2.2vw;font-weight:800;color:var(--tc,#FFD700);}
+  .pin .nm{font-size:1.4vw;color:var(--tc,#0d1a33);font-weight:bold;}
+  .pin .tp{font-size:2.2vw;font-weight:800;color:var(--tc,#0d1a33);}
   .pin.sm .nm{font-size:1.3vw;}
   .pin.sm .tp{font-size:1.8vw;}
   .line{position:absolute;transform:translateX(-50%);width:4px;
@@ -129,22 +129,9 @@ function tempColor(id, t){
   const [r,g,b]=tempGradRgb(t);
   return `rgba(${r|0},${g|0},${b|0},.92)`;
 }
-// 背景と金文字(#FFD700)のコントラスト比(WCAG方式)を計算し、読みにくい場合だけ
-// 濃色文字に切り替える。黄〜オレンジの背景で金文字が同化する問題への対処。
-function relLuminance([r,g,b]){
-  const c=[r,g,b].map(v=>{ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); });
-  return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
-}
-function contrastRatio(rgb1, rgb2){
-  const l1=relLuminance(rgb1), l2=relLuminance(rgb2);
-  const lighter=Math.max(l1,l2), darker=Math.min(l1,l2);
-  return (lighter+0.05)/(darker+0.05);
-}
-const GOLD_RGB=[255,215,0];
+// 背景色によらず濃紺で統一。全温度域(青〜黄〜赤)でコントラスト比4以上を確保できる。
 function tempTextColor(t){
-  if(t==null) return '#FFD700';
-  const rgb=tempGradRgb(t);
-  return contrastRatio(GOLD_RGB, rgb)<2.5 ? '#2a1c00' : '#FFD700';
+  return '#0d1a33';
 }
 
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
