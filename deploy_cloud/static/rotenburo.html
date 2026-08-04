@@ -11,13 +11,13 @@
 
   /* ── トップバー（テロップのみ） ── */
   #topbar{display:flex;align-items:center;background:rgba(10,18,8,.8);flex-shrink:0;
-    padding:26px 28px;}
+    padding:10px 16px;}
 
   /* ── 流れるテロップ ── */
-  #ticker-wrap{flex:1;overflow:hidden;height:7.5vw;position:relative;}
+  #ticker-wrap{flex:1;overflow:hidden;height:2.8vw;position:relative;}
   #ticker-text{display:inline-block;white-space:nowrap;padding-left:100%;
-    font-size:5vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
-    animation:ticker 30s linear infinite;}
+    font-size:2vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
+    animation:ticker 18s linear infinite;}
   @keyframes ticker{
     from{transform:translateX(0);}
     to{transform:translateX(-100%);}
@@ -25,12 +25,12 @@
 
   /* ── 右下: 時計 / 左下: 現在地・気温 ── */
   #corner-time, #corner-location{
-    position:fixed;bottom:22px;z-index:20;
-    background:rgba(10,18,8,.75);color:#f0e6cf;font-weight:bold;
-    padding:20px 36px;border-radius:16px;font-size:3.8vw;
+    position:fixed;bottom:14px;z-index:20;
+    background:rgba(10,18,8,.7);color:#f0e6cf;font-weight:bold;
+    padding:8px 18px;border-radius:10px;font-size:1.5vw;
     font-variant-numeric:tabular-nums;}
-  #corner-time{right:22px;}
-  #corner-location{left:22px;display:flex;gap:16px;align-items:center;}
+  #corner-time{right:14px;}
+  #corner-location{left:14px;display:flex;gap:8px;align-items:center;}
   #corner-location .t{color:#fff;}
   #upd, .connbadge{display:none;}
 
