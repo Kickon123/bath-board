@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>湯畑 案内板 設定</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --bg:#f4f6f9;--card:#ffffff;--border:#e2e8f0;
+    --text:#1e293b;--sub:#64748b;--accent:#4f46e5;--ok:#16a34a;--ng:#dc2626;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
+    min-height:100vh;padding:16px 16px 60px;}
+  h1{font-size:1.2rem;margin-bottom:4px;}
+  p.lead{color:var(--sub);font-size:.82rem;margin-bottom:18px;}
+  a.back{color:var(--accent);font-size:.82rem;text-decoration:none;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:16px 18px;margin-bottom:16px;max-width:900px;}
+  .card h2{font-size:1rem;margin-bottom:4px;}
+  .card .desc{color:var(--sub);font-size:.78rem;margin-bottom:14px;}
+
+  .row{display:flex;flex-wrap:wrap;gap:14px 20px;margin-bottom:6px;}
+  .field{display:flex;flex-direction:column;gap:4px;min-width:130px;}
+  .field label{font-size:.75rem;color:var(--sub);}
+  .field input[type=number],.field input[type=text]{
+    padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;width:100%;
+  }
+  .field input[type=range]{width:100%;}
+  .field output{font-size:.78rem;color:var(--accent);font-weight:bold;}
+
+  input[type=checkbox]{width:16px;height:16px;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:.88rem;margin:6px 0;}
+
+  .gradbar-preview{height:22px;border-radius:6px;border:1px solid var(--border);margin-top:10px;}
+
+  select{padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;}
+
+  #pin-editor{position:relative;width:100%;max-width:640px;aspect-ratio:1368/796;
+    background:#2c380b;border-radius:10px;overflow:hidden;margin-top:10px;}
+  #pin-editor img{width:100%;height:100%;object-fit:cover;display:block;}
+  .handle{position:absolute;width:22px;height:22px;border-radius:50%;
+    background:rgba(255,215,0,.9);border:3px solid #fff;transform:translate(-50%,-50%);
+    cursor:grab;box-shadow:0 0 8px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:#000;font-weight:bold;}
+  .spot-table{margin-top:10px;font-size:.8rem;border-collapse:collapse;width:100%;}
+  .spot-table td,.spot-table th{padding:4px 6px;border-bottom:1px solid var(--border);text-align:left;}
+
+  .img-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+  .img-item{width:100px;text-align:center;}
+  .img-item img{width:100px;height:70px;object-fit:cover;border-radius:6px;border:2px solid var(--border);}
+  .img-item.selected img{border-color:var(--accent);}
+  .img-item .name{font-size:.65rem;color:var(--sub);margin-top:3px;word-break:break-all;}
+  .img-item .order{font-size:.7rem;color:var(--accent);font-weight:bold;}
+
+  button.primary{background:var(--accent);color:#fff;border:none;padding:10px 22px;
+    border-radius:10px;font-size:.9rem;font-weight:bold;cursor:pointer;}
+  button.primary:disabled{opacity:.5;cursor:default;}
+  button.secondary{background:#f1f5f9;color:var(--text);border:1px solid var(--border);
+    padding:7px 14px;border-radius:8px;font-size:.82rem;cursor:pointer;}
+
+  #save-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);
+    padding:12px 16px;display:flex;align-items:center;gap:14px;z-index:50;}
+  #save-status{font-size:.82rem;}
+  #save-status.ok{color:var(--ok);}
+  #save-status.ng{color:var(--ng);}
+
+  #gate{position:fixed;inset:0;background:var(--bg);z-index:200;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+  #gate input{padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:1rem;width:220px;}
+  #gate .err{color:var(--ng);font-size:.82rem;height:1em;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>♨ 案内板 設定</h1>
+  <input type="password" id="gate-pw" placeholder="パスワード">
+  <button class="primary" id="gate-btn">ログイン</button>
+  <div class="err" id="gate-err"></div>
+</div>
+
+<div id="app" style="display:none;">
+  <a class="back" href="/kanri">← モニター画面に戻る</a>
+  <h1>♨ 湯畑 案内板 設定</h1>
+  <p class="lead">/allcut・/rotenburo・/yubatake・スライドショーの表示に反映されます。保存すると数秒で全画面に反映されます。</p>
+
+  <div class="card">
+    <h2>配色</h2>
+    <div class="desc">28℃以下は青固定、閾値〜上限は暖色グラデーション（開始色相→終了色相）。</div>
+    <div class="row">
+      <div class="field"><label>閾値(℃)</label><input type="number" id="c-threshold" step="1"></div>
+      <div class="field"><label>上限(℃)</label><input type="number" id="c-max" step="1"></div>
+      <div class="field"><label>青の色相</label><input type="number" id="c-hueblue" step="1"></div>
+      <div class="field"><label>青の彩度(%)</label><input type="number" id="c-satblue" step="1"></div>
+      <div class="field"><label>暖色 開始色相</label><input type="number" id="c-huewarmstart" step="1"></div>
+      <div class="field"><label>暖色 終了色相</label><input type="number" id="c-huewarmend" step="1"></div>
+      <div class="field"><label>暖色の彩度(%)</label><input type="number" id="c-satwarm" step="1"></div>
+      <div class="field"><label>明度(%)</label><input type="number" id="c-light" step="1"></div>
+    </div>
+    <div class="gradbar-preview" id="gradbar-preview"></div>
+  </div>
+
+  <div class="card">
+    <h2>テロップ文言</h2>
+    <div class="desc">/rotenburo の上部に流れる案内文。</div>
+    <div class="field" style="max-width:500px;">
+      <input type="text" id="c-ticker">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>ピンの大きさ・位置</h2>
+    <div class="desc">写真上の●をドラッグして湯船の位置を調整できます。</div>
+    <div class="field" style="max-width:200px;">
+      <label>ピンの大きさ (0.5〜1.5)</label>
+      <input type="range" id="c-pinscale" min="0.5" max="1.5" step="0.01">
+      <output id="c-pinscale-out"></output>
+    </div>
+    <div id="pin-editor"><img src="/static/cut.png" id="pin-editor-img"></div>
+    <table class="spot-table">
+      <thead><tr><th>名前</th><th>u</th><th>v</th></tr></thead>
+      <tbody id="spot-table-body"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>スライドショーで使う画面</h2>
+    <div class="desc">/ と /slideshow の左側（温度表示エリア）に表示するURL。</div>
+    <select id="c-bathurl"></select>
+  </div>
+
+  <div class="card">
+    <h2>スライドショーで使う画像</h2>
+    <div class="desc">クリックした順に、静止画カルーセルとして表示されます（再クリックで解除）。</div>
+    <div class="img-grid" id="img-grid"></div>
+  </div>
+</div>
+
+<div id="save-bar" style="display:none;">
+  <button class="primary" id="save-btn">保存する</button>
+  <span id="save-status"></span>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let TOKEN='';
+let CONFIG=null;
+let IMAGES=[];
+let selectedImages=[];
+
+// ── ログイン ──
+$('gate-btn').onclick=doLogin;
+$('gate-pw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+async function doLogin(){
+  const pw=$('gate-pw').value;
+  if(!pw){ $('gate-err').textContent='パスワードを入力してください'; return; }
+  // 保存APIに空更新を投げず、まずconfigを取ってから、保存時に実際に認証チェックされる。
+  // ここでは一旦トークンとして保持し、初回保存時に成否を確認する簡易方式。
+  TOKEN=pw;
+  $('gate').style.display='none';
+  $('app').style.display='block';
+  $('save-bar').style.display='flex';
+  await init();
+}
+
+// ── 初期化 ──
+async function init(){
+  const [cfgRes, imgRes] = await Promise.all([
+    fetch('/api/config'), fetch('/api/images')
+  ]);
+  CONFIG = await cfgRes.json();
+  IMAGES = (await imgRes.json()).images || [];
+  selectedImages = [...(CONFIG.slideshow?.images || [])];
+
+  const c = CONFIG.color;
+  $('c-threshold').value=c.temp_threshold;
+  $('c-max').value=c.temp_max;
+  $('c-hueblue').value=c.hue_blue;
+  $('c-satblue').value=c.sat_blue;
+  $('c-huewarmstart').value=c.hue_warm_start;
+  $('c-huewarmend').value=c.hue_warm_end;
+  $('c-satwarm').value=c.sat_warm;
+  $('c-light').value=c.grad_light;
+  [...document.querySelectorAll('.card:nth-of-type(1) input')].forEach(i=>i.addEventListener('input', updateGradPreview));
+  updateGradPreview();
+
+  $('c-ticker').value=CONFIG.ticker_text || '';
+
+  $('c-pinscale').value=CONFIG.pin_scale;
+  $('c-pinscale-out').textContent=CONFIG.pin_scale;
+  $('c-pinscale').addEventListener('input', ()=>{ $('c-pinscale-out').textContent=$('c-pinscale').value; });
+
+  const sel=$('c-bathurl');
+  sel.innerHTML='';
+  for(const s of (CONFIG.bath_screens||[])){
+    const opt=document.createElement('option');
+    opt.value=s.url; opt.textContent=`${s.label} (${s.url})`;
+    sel.appendChild(opt);
+  }
+  sel.value=CONFIG.slideshow?.bath_url || '';
+
+  renderImageGrid();
+  renderPinEditor();
+}
+
+function updateGradPreview(){
+  function hslToRgb(h,s,l){
+    s/=100; l/=100;
+    const k=n=>(n+h/30)%12;
+    const a=s*Math.min(l,1-l);
+    const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+    return [255*f(0),255*f(8),255*f(4)];
+  }
+  const th=+$('c-threshold').value, max=+$('c-max').value;
+  const hb=+$('c-hueblue').value, sb=+$('c-satblue').value;
+  const hs=+$('c-huewarmstart').value, he=+$('c-huewarmend').value, sw=+$('c-satwarm').value;
+  const l=+$('c-light').value;
+  const lo=th-4;
+  const stops=[];
+  for(let t=lo;t<=max;t+=1){
+    let rgb;
+    if(t<=th) rgb=hslToRgb(hb,sb,l);
+    else{
+      const f=(Math.min(max,t)-th)/(max-th);
+      rgb=hslToRgb(hs+(he-hs)*f, sw, l);
+    }
+    stops.push(`rgb(${rgb.map(Math.round).join(',')}) ${(t-lo)/(max-lo)*100}%`);
+  }
+  $('gradbar-preview').style.background=`linear-gradient(90deg, ${stops.join(',')})`;
+}
+
+// ── スライドショー画像選択 ──
+function renderImageGrid(){
+  const grid=$('img-grid');
+  grid.innerHTML='';
+  for(const name of IMAGES){
+    const idx=selectedImages.indexOf(name);
+    const item=document.createElement('div');
+    item.className='img-item'+(idx>=0?' selected':'');
+    item.innerHTML=`<img src="/static/${encodeURIComponent(name)}"><div class="name">${name}</div>
+      <div class="order">${idx>=0?('#'+(idx+1)):''}</div>`;
+    item.onclick=()=>{
+      const i=selectedImages.indexOf(name);
+      if(i>=0) selectedImages.splice(i,1); else selectedImages.push(name);
+      renderImageGrid();
+    };
+    grid.appendChild(item);
+  }
+}
+
+// ── ピン位置エディタ（ドラッグ） ──
+function renderPinEditor(){
+  const wrap=$('pin-editor');
+  let cont=document.getElementById('pin-handles');
+  if(!cont){
+    cont=document.createElement('div');
+    cont.id='pin-handles';
+    cont.style.cssText='position:absolute;inset:0;';
+    wrap.appendChild(cont);
+  }
+  cont.innerHTML='';
+  for(const s of CONFIG.spots){
+    const h=document.createElement('div');
+    h.className='handle';
+    h.style.left=(s.u*100)+'%';
+    h.style.top=(s.v*100)+'%';
+    h.textContent=s.name[0];
+    h.dataset.id=s.id;
+    cont.appendChild(h);
+  }
+  renderSpotTable();
+
+  let dragId=null;
+  cont.onmousedown=e=>{
+    const h=e.target.closest('.handle');
+    if(!h) return;
+    dragId=h.dataset.id;
+  };
+  window.addEventListener('mousemove', e=>{
+    if(dragId==null) return;
+    const rect=wrap.getBoundingClientRect();
+    const u=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    const v=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+    const s=CONFIG.spots.find(s=>String(s.id)===String(dragId));
+    if(s){ s.u=u; s.v=v; renderPinEditor(); }
+  });
+  window.addEventListener('mouseup', ()=>{ dragId=null; });
+}
+function renderSpotTable(){
+  const tb=$('spot-table-body');
+  tb.innerHTML='';
+  for(const s of CONFIG.spots){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${s.name}</td><td>${s.u.toFixed(3)}</td><td>${s.v.toFixed(3)}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+// ── 保存 ──
+$('save-btn').onclick=async ()=>{
+  const statusEl=$('save-status');
+  statusEl.className=''; statusEl.textContent='保存中…';
+  const newConfig={
+    color:{
+      temp_threshold:+$('c-threshold').value,
+      temp_max:+$('c-max').value,
+      hue_blue:+$('c-hueblue').value,
+      sat_blue:+$('c-satblue').value,
+      hue_warm_start:+$('c-huewarmstart').value,
+      hue_warm_end:+$('c-huewarmend').value,
+      sat_warm:+$('c-satwarm').value,
+      grad_light:+$('c-light').value,
+    },
+    pin_scale:+$('c-pinscale').value,
+    spots:CONFIG.spots,
+    ticker_text:$('c-ticker').value,
+    slideshow:{ bath_url:$('c-bathurl').value, images:selectedImages },
+    bath_screens:CONFIG.bath_screens,
+  };
+  try{
+    const res=await fetch('/api/config', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Token':TOKEN},
+      body:JSON.stringify(newConfig),
+    });
+    if(res.status===403){
+      statusEl.className='ng'; statusEl.textContent='パスワードが違います';
+      return;
+    }
+    if(!res.ok){
+      statusEl.className='ng'; statusEl.textContent='保存に失敗しました';
+      return;
+    }
+    statusEl.className='ok'; statusEl.textContent='✓ 保存しました';
+  }catch(e){
+    statusEl.className='ng'; statusEl.textContent='通信エラー';
+  }
+};
+</script>
+</body>
+</html>
