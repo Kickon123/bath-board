@@ -35,7 +35,7 @@ DEFAULT_CONFIG = {
     "color": {
         "temp_threshold": 28, "temp_max": 40,
         "hue_blue": 210, "sat_blue": 85,
-        "hue_warm_start": 28, "hue_warm_end": 55, "sat_warm": 92,
+        "hue_warm_start": 55, "hue_warm_end": 0, "sat_warm": 92,
         "grad_light": 50,
     },
     "pin_scale": 0.93,

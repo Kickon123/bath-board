@@ -11,13 +11,13 @@
 
   /* ── トップバー（テロップのみ） ── */
   #topbar{display:flex;align-items:center;background:rgba(10,18,8,.8);flex-shrink:0;
-    padding:10px 16px;}
+    padding:16px 20px;}
 
   /* ── 流れるテロップ ── */
-  #ticker-wrap{flex:1;overflow:hidden;height:2.8vw;position:relative;}
+  #ticker-wrap{flex:1;overflow:hidden;height:5vw;position:relative;}
   #ticker-text{display:inline-block;white-space:nowrap;padding-left:100%;
-    font-size:2vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
-    animation:ticker 18s linear infinite;}
+    font-size:3.4vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
+    animation:ticker 24s linear infinite;}
   @keyframes ticker{
     from{transform:translateX(0);}
     to{transform:translateX(-100%);}
@@ -25,12 +25,12 @@
 
   /* ── 右下: 時計 / 左下: 現在地・気温 ── */
   #corner-time, #corner-location{
-    position:fixed;bottom:14px;z-index:20;
-    background:rgba(10,18,8,.7);color:#f0e6cf;font-weight:bold;
-    padding:8px 18px;border-radius:10px;font-size:1.5vw;
+    position:fixed;bottom:18px;z-index:20;
+    background:rgba(10,18,8,.75);color:#f0e6cf;font-weight:bold;
+    padding:14px 26px;border-radius:14px;font-size:2.6vw;
     font-variant-numeric:tabular-nums;}
-  #corner-time{right:14px;}
-  #corner-location{left:14px;display:flex;gap:8px;align-items:center;}
+  #corner-time{right:18px;}
+  #corner-location{left:18px;display:flex;gap:12px;align-items:center;}
   #corner-location .t{color:#fff;}
   #upd, .connbadge{display:none;}
 
@@ -125,7 +125,7 @@ const PIN_SCALE = 0.93;
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
 const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
 const HUE_BLUE = 210, SAT_BLUE = 85;
-const HUE_WARM_START = 28, HUE_WARM_END = 55, SAT_WARM = 92;
+const HUE_WARM_START = 55, HUE_WARM_END = 0, SAT_WARM = 92;
 const GRAD_LIGHT = 50;
 function hslToRgb(h,s,l){
   s/=100; l/=100;
