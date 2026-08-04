@@ -244,6 +244,10 @@ def board_all_cut():
 def rotenburo():
     return send_from_directory("static", "rotenburo.html")
 
+@app.get("/rotenburo_effect")
+def rotenburo_effect():
+    return send_from_directory("static", "rotenburo_effect.html")
+
 @app.get("/kanri")
 def kanri():
     return send_from_directory("static", "staff.html")
