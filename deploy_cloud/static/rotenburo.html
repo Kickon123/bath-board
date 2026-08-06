@@ -13,14 +13,15 @@
   #topbar{display:flex;align-items:center;background:rgba(10,18,8,.8);flex-shrink:0;
     padding:20px 4px;}
 
-  /* ── 流れるテロップ ── */
+  /* ── 流れるテロップ（2つ並べてシームレスにループ、途切れなし） ── */
   #ticker-wrap{flex:1;overflow:hidden;height:5vw;position:relative;}
-  #ticker-text{display:inline-block;white-space:nowrap;padding-left:100%;
-    font-size:3.8vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;
+  #ticker-track{display:flex;white-space:nowrap;width:max-content;
     animation:ticker 24s linear infinite;}
+  .ticker-item{display:inline-block;padding-right:120px;
+    font-size:3.8vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;}
   @keyframes ticker{
     from{transform:translateX(0);}
-    to{transform:translateX(-100%);}
+    to{transform:translateX(-50%);}
   }
 
   /* ── 右下: 時計 / 左下: 現在地・気温 ── */
@@ -78,7 +79,10 @@
 <body>
 
 <div id="topbar">
-  <div id="ticker-wrap"><div id="ticker-text">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear</div></div>
+  <div id="ticker-wrap"><div id="ticker-track">
+    <span class="ticker-item">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator</span>
+    <span class="ticker-item">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator</span>
+  </div></div>
 </div>
 
 <div id="wrap">
