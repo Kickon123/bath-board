@@ -240,6 +240,10 @@ function tempGradRgb(t){
 function tempColor(id, t){
   if(id===6) return 'rgba(58,144,216,.9)'; // 立湯は常に青固定
   if(t==null) return 'rgba(90,100,86,.85)';
+  if(id===5 && t<=29){ // 座湯は閑散期(未加温=29℃前後)を青で表示
+    const [r,g,b]=hslToRgb(HUE_BLUE, SAT_BLUE, GRAD_LIGHT);
+    return `rgba(${r|0},${g|0},${b|0},.92)`;
+  }
   const [r,g,b]=tempGradRgb(t);
   return `rgba(${r|0},${g|0},${b|0},.92)`;
 }
