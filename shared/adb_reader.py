@@ -282,6 +282,17 @@ def find_device_coords(cfg: dict, device_name: str) -> tuple[int, int] | None:
     return None
 
 
+def scroll_device_list(cfg: dict):
+    """ホーム画面のデバイス一覧(RecyclerView)を下にスクロールする。
+    デバイス数が増えて一覧が画面に収まらない場合、下側の項目
+    （例: 大浴場）を見つけるために使う。"""
+    coords   = cfg["adb"].get("device_list_scroll", [360, 1300, 360, 700])
+    duration = cfg["adb"].get("swipe_duration_ms", 300)
+    adb(cfg, "shell", "input", "swipe",
+        str(coords[0]), str(coords[1]), str(coords[2]), str(coords[3]), str(duration))
+    time.sleep(1.5)
+
+
 def _force_start(cfg: dict, pkg: str, app_wait: int):
     """force-stop → ランチャー起動（フォールバック用）"""
     adb(cfg, "shell", "am", "force-stop", pkg)
@@ -315,12 +326,17 @@ def refresh_device_view(cfg: dict, device_name: str | None = None):
         _force_start(cfg, pkg, app_wait)
 
     # ② デバイス名がホーム一覧に現れるまでリトライしてタップ
+    #    見つからない場合は一覧を下にスクロールしてから再検索する
+    #   （デバイス数が多く画面に収まらない場合、下側の項目は初期表示では見えないため）
     log.info(f"  「{target}」を検索中...")
     coords = None
     for attempt in range(6):
         coords = find_device_coords(cfg, target)
         if coords:
             break
+        if attempt == 2:
+            log.info(f"  「{target}」が見つからないため一覧をスクロール...")
+            scroll_device_list(cfg)
         time.sleep(2)
 
     if coords:
