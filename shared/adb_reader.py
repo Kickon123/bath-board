@@ -372,19 +372,18 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     1つのInkbirdデバイスのセンサーを全タブ巡回して収集する。
     戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
 
-    タブが1つも無い機器（パントリーの単体温湿度計など）は、画面内の表示名が
-    "IBS-M2"等の型番になり全台共通のため、ゲートウェイ扱いにはせず
-    device_name（呼び出し元が指定した機器名）をそのままキーにして記録する。
+    config の adb.single_sensor_devices に列挙された機器（パントリーの単体
+    温湿度計など）は、タブ探索・タップを一切行わず選択直後の画面だけを読む。
+    画面内の表示名は"IBS-M2"等の型番になり全台共通でゲートウェイ扱いされて
+    しまうため、device_name（呼び出し元が指定した機器名）をキーに記録する。
     """
     refresh_device_view(cfg, device_name)
 
     collected: dict = {}
     gateway: dict | None = None
     tab_wait = cfg["adb"].get("tab_wait", 4)
-
-    root = dump_ui(cfg)
-    tabs = find_sensor_tabs(root) if root is not None else []
-    single_sensor = not tabs
+    single_sensor_devices = set(cfg["adb"].get("single_sensor_devices", []))
+    single_sensor = _norm_name(device_name) in {_norm_name(n) for n in single_sensor_devices}
 
     def read_current(label: str, root_override=None):
         nonlocal gateway
@@ -410,13 +409,19 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
             log.info(f"    {label}: [{dev}] {s['temp']}°C" +
                      (f" / {s['humidity']}%" if s.get("humidity") is not None else ""))
 
-    log.info(f"  検出タブ数: {len(tabs)} {tabs}"
-             + ("（単体センサー機器）" if single_sensor else ""))
-    read_current("初期画面", root_override=root)
-    for i, (x, y) in enumerate(tabs):
-        adb(cfg, "shell", "input", "tap", str(x), str(y))
-        time.sleep(tab_wait)
-        read_current(f"タブ{i+1}")
+    if single_sensor:
+        # 単体センサー機器: タブ探索・タップは一切行わず初期画面だけ読む
+        log.info(f"  単体センサー機器のためタブ操作なし")
+        read_current("初期画面")
+    else:
+        root = dump_ui(cfg)
+        tabs = find_sensor_tabs(root) if root is not None else []
+        log.info(f"  検出タブ数: {len(tabs)} {tabs}")
+        read_current("初期画面", root_override=root)
+        for i, (x, y) in enumerate(tabs):
+            adb(cfg, "shell", "input", "tap", str(x), str(y))
+            time.sleep(tab_wait)
+            read_current(f"タブ{i+1}")
 
     log.info(f"  [{device_name}] 取得完了: センサー={list(collected.keys())} / ゲートウェイ={'あり' if gateway else 'なし'}")
     return {"sensors": collected, "gateway": gateway}
