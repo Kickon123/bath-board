@@ -13,6 +13,7 @@
     "swipe_wait_ms": 1500,
     "inkbird_package": "com.inkbird.inkbirdapp",
     "page_refresh_wait": 4,
+    "single_sensor_wait": 2,
     "app_launch_wait": 9,
     "nav_wait": 2.5,
     "devices": ["湯畑", "大浴場(男)", "パントリー 3F", "パントリー 4F", "パントリー 5F"],

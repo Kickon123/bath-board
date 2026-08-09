@@ -308,11 +308,19 @@ def refresh_device_view(cfg: dict, device_name: str | None = None):
 
     まずバックキーでホーム一覧への遷移を試みる。
     デバイス名が見つからなければ force-stop → 再起動にフォールバック。
+
+    単体センサー機器（パントリー等、タブなしの1画面のみ）は、複数センサーを
+    束ねるハブ機器（湯畑・大浴場等）よりも画面が単純で読み込みが速いため、
+    adb.single_sensor_wait（既定2秒）を使って待ち時間を短縮する。
+    ハブ機器は従来通り adb.page_refresh_wait（既定4秒）を使う。
     """
     ui       = cfg["adb"].get("ui", {})
-    wait     = cfg["adb"].get("page_refresh_wait", 4)
-    app_wait = cfg["adb"].get("app_launch_wait", 9)
     target   = device_name or ui.get("device_name", "湯畑")
+    single_sensor_devices = {_norm_name(n) for n in cfg["adb"].get("single_sensor_devices", [])}
+    is_single = _norm_name(target) in single_sensor_devices
+    wait     = cfg["adb"].get("single_sensor_wait", 2) if is_single \
+               else cfg["adb"].get("page_refresh_wait", 4)
+    app_wait = cfg["adb"].get("app_launch_wait", 9)
     pkg      = cfg["adb"].get("inkbird_package", "com.inkbird.inkbirdapp")
 
     # ① バックキーでホーム一覧へ戻ることを試みる
