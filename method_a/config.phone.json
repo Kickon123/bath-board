@@ -15,7 +15,7 @@
     "page_refresh_wait": 4,
     "app_launch_wait": 9,
     "nav_wait": 2.5,
-    "devices": ["湯畑", "大浴場(男)"],
+    "devices": ["湯畑", "大浴場(男)", "パントリー 3F", "パントリー 4F", "パントリー 5F"],
     "ui": {
       "close_btn_x":  45,
       "close_btn_y":  110,
@@ -37,6 +37,9 @@
     { "id": 5, "name": "座湯",       "sensor_name": "座湯",       "left": 55, "top": 62, "target": "",         "color": "neutral", "active": false },
     { "id": 6, "name": "立湯",       "sensor_name": "立湯",       "left": 15, "top": 52, "target": "",         "color": "neutral" },
     { "id": 20, "name": "男湯",      "sensor_name": "男湯",       "device": "大浴場(男)", "target": "", "color": "hot"  },
-    { "id": 21, "name": "女湯",      "sensor_name": "女湯",       "device": "大浴場(男)", "target": "", "color": "warm" }
+    { "id": 21, "name": "女湯",      "sensor_name": "女湯",       "device": "大浴場(男)", "target": "", "color": "warm" },
+    { "id": 30, "name": "パントリー3F", "sensor_name": "パントリー 3F", "target": "", "color": "neutral" },
+    { "id": 31, "name": "パントリー4F", "sensor_name": "パントリー 4F", "target": "", "color": "neutral" },
+    { "id": 32, "name": "パントリー5F", "sensor_name": "パントリー 5F", "target": "", "color": "neutral" }
   ]
 }

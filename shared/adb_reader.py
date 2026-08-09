@@ -371,6 +371,10 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     """
     1つのInkbirdデバイスのセンサーを全タブ巡回して収集する。
     戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
+
+    タブが1つも無い機器（パントリーの単体温湿度計など）は、画面内の表示名が
+    "IBS-M2"等の型番になり全台共通のため、ゲートウェイ扱いにはせず
+    device_name（呼び出し元が指定した機器名）をそのままキーにして記録する。
     """
     refresh_device_view(cfg, device_name)
 
@@ -378,30 +382,37 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     gateway: dict | None = None
     tab_wait = cfg["adb"].get("tab_wait", 4)
 
-    def read_current(label: str):
+    root = dump_ui(cfg)
+    tabs = find_sensor_tabs(root) if root is not None else []
+    single_sensor = not tabs
+
+    def read_current(label: str, root_override=None):
         nonlocal gateway
-        root = dump_ui(cfg)
-        if root is None:
+        r = root_override if root_override is not None else dump_ui(cfg)
+        if r is None:
             log.info(f"    {label}: UIダンプ失敗")
-            return root
-        visible = extract_sensors_with_bounds(root)
+            return
+        visible = extract_sensors_with_bounds(r)
         if not visible:
             log.info(f"    {label}: データなし")
-            return root
+            return
         s = visible[0]
         dev = s.get("device_name", "")
-        if is_gateway_device(dev):
+        if single_sensor:
+            collected[device_name] = s
+            log.info(f"    {label}: [{device_name}] {s['temp']}°C" +
+                     (f" / {s['humidity']}%" if s.get("humidity") is not None else ""))
+        elif is_gateway_device(dev):
             gateway = {"temp": s["temp"], "humidity": s.get("humidity")}
             log.info(f"    {label}: [{dev}] {s['temp']}°C → 外気温")
         elif dev and dev not in collected:
             collected[dev] = s
             log.info(f"    {label}: [{dev}] {s['temp']}°C" +
                      (f" / {s['humidity']}%" if s.get("humidity") is not None else ""))
-        return root
 
-    root = read_current("初期画面")
-    tabs = find_sensor_tabs(root) if root is not None else []
-    log.info(f"  検出タブ数: {len(tabs)} {tabs}")
+    log.info(f"  検出タブ数: {len(tabs)} {tabs}"
+             + ("（単体センサー機器）" if single_sensor else ""))
+    read_current("初期画面", root_override=root)
     for i, (x, y) in enumerate(tabs):
         adb(cfg, "shell", "input", "tap", str(x), str(y))
         time.sleep(tab_wait)
