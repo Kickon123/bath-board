@@ -104,6 +104,9 @@
     overflow:hidden;
   }
   .bath-card.stale{border-style:dashed;opacity:.85;}
+  .card-flag{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;
+    background:#3a90d8;display:none;}
+  .bath-card.flagged .card-flag{display:block;}
   .bath-card .card-label{
     font-size:calc(1.4vw * var(--card-scale,1));color:#b8a884;font-weight:bold;letter-spacing:.12em;
   }
@@ -166,12 +169,14 @@
   <div id="daiyokujo">
     <div id="daiyu-cards">
       <div class="bath-card" id="card-20">
+        <div class="card-flag"></div>
         <div class="card-label">男湯</div>
         <div class="card-name">大浴場</div>
         <div class="card-temp" id="temp-20">--.-℃</div>
         <div class="card-upd" id="upd-20"></div>
       </div>
       <div class="bath-card" id="card-21">
+        <div class="card-flag"></div>
         <div class="card-label">女湯</div>
         <div class="card-name">大浴場</div>
         <div class="card-temp" id="temp-21">--.-℃</div>
@@ -313,6 +318,10 @@ function render(){
 }
 
 // ── 大浴場レンダリング ──
+// 大浴場センサーが誤って水風呂に入れられる等で異常に低い値が出ることがあるため、
+// 表示は39℃を下限としてクランプする。実際に下回っていた場合は、お客様には
+// 気づかれない程度の小さいドット(.card-flag)だけを右上に出して従業員に知らせる。
+const DAIYU_MIN_DISPLAY = 39;
 function renderDaiyu(){
   for(const s of DAIYU_SPOTS){
     const t=daiTempMap[s.id];
@@ -320,12 +329,15 @@ function renderDaiyu(){
     const tempEl=document.getElementById(`temp-${s.id}`);
     const updEl=document.getElementById(`upd-${s.id}`);
     if(!card||!tempEl) continue;
-    const label=t!=null?`${Number(t).toFixed(1)}℃`:'--.-℃';
+    const belowMin=t!=null&&t<DAIYU_MIN_DISPLAY;
+    const dTemp=belowMin?DAIYU_MIN_DISPLAY:t;
+    const label=dTemp!=null?`${Number(dTemp).toFixed(1)}℃`:'--.-℃';
     tempEl.textContent=label;
-    tempEl.style.color=tempTextColor(t);
-    card.style.setProperty('--bc', tempColor(s.id, t));
+    tempEl.style.color=tempTextColor(dTemp);
+    card.style.setProperty('--bc', tempColor(s.id, dTemp));
     const isStale=!isOnline||daiStaleMap[s.id];
     card.classList.toggle('stale', isStale);
+    card.classList.toggle('flagged', belowMin);
     if(updEl) updEl.textContent=isStale&&daiAtMap[s.id]?`⚠ ${fmtAt(daiAtMap[s.id])}`:'';
   }
 }
