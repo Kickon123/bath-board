@@ -304,7 +304,7 @@ function render(){
     html+=`<div class="line" style="left:${px}px;top:${py-lineH}px;height:${lineH}px;background:${lc};opacity:.7"></div>`;
     html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-lineH}px;--lc:${lc}">
       <div class="nm">${s.name}</div>
-      <div class="tp">${label}</div>
+      ${s.banned?'':`<div class="tp">${label}</div>`}
       ${s.banned?'<span class="ban">使用禁止</span>':''}
       ${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
     </div>`;
