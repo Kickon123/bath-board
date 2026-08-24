@@ -24,11 +24,12 @@
     to{transform:translateX(-50%);}
   }
 
-  /* ── 時計 / 現在地・気温（位置はCMSからドラッグで移動可能） ── */
+  /* ── 時計 / 現在地・気温（位置・大きさともCMSから調整可能） ── */
   #corner-time, #corner-location{
     position:absolute;transform:translate(-50%,-50%);z-index:20;
     background:rgba(10,18,8,.75);color:#f0e6cf;font-weight:bold;
-    padding:20px 27px;border-radius:14px;font-size:2.3vw;
+    padding:calc(20px * var(--corner-scale,1)) calc(27px * var(--corner-scale,1));
+    border-radius:14px;font-size:calc(2.3vw * var(--corner-scale,1));
     white-space:nowrap;
     font-variant-numeric:tabular-nums;}
   #corner-location{display:flex;gap:12px;align-items:center;}
@@ -127,6 +128,10 @@ const FLOATS = [
 
 // ── ピンの大きさ（CMSから調整）──
 const PIN_SCALE = 0.93;
+
+// ── 時刻・現在地/気温の大きさ（CMSから調整）──
+const CORNER_SCALE = 1;
+document.documentElement.style.setProperty('--corner-scale', CORNER_SCALE);
 
 // 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
