@@ -61,7 +61,10 @@
   .pin.stale{border-style:dashed;opacity:.9;}
   .pin .old{font-size:.55vw;color:#ffd24a;font-weight:bold;display:block;}
   .pin .ban{display:block;margin-top:4px;background:#c0392b;color:#fff;font-weight:900;
-    font-size:1.1vw;padding:3px 10px;border-radius:6px;letter-spacing:.05em;}
+    font-size:var(--pin-tp,2.6vw);padding:3px 10px;border-radius:6px;letter-spacing:.05em;}
+  .pin.sm .ban{font-size:var(--pin-sm-tp,2.2vw);}
+  .pin.lg .ban{font-size:calc(var(--pin-lg-tp,3.0vw) * 0.6);}
+  .pin .ban-en{display:block;font-size:.55em;font-weight:700;letter-spacing:.04em;margin-top:1px;}
   .dot{position:absolute;transform:translate(-50%,-50%);
     width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
   #yugata{position:absolute;transform:translate(-50%,-50%);
@@ -219,7 +222,7 @@ function render(){
     html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-lineH}px;--lc:${lc}">
       <div class="nm">${s.name}</div>
       ${s.banned?'':`<div class="tp">${label}</div>`}
-      ${s.banned?'<span class="ban">使用禁止</span>':''}
+      ${s.banned?'<span class="ban">使用禁止<span class="ban-en">Closed</span></span>':''}
       ${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
     </div>`;
   }
