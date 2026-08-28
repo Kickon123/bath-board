@@ -212,11 +212,12 @@ def slideshow64():
 @app.get("/yubatake")
 @app.get("/board")
 def board():
-    return send_from_directory("static", "yubatake.html")
+    # allcutと同じファイル。大浴場パネルはJS側でパスを見て自動的に非表示にする
+    return send_from_directory("static", "base-all-cut.html")
 
 @app.get("/bath/yubatake")
 def bath_yubatake():
-    return send_from_directory("static", "yubatake.html")
+    return send_from_directory("static", "base-all-cut.html")
 
 @app.get("/bath/daiyokujo")
 def bath_daiyokujo():

@@ -203,10 +203,20 @@
 
 <script>
 const EDIT_MODE=new URLSearchParams(location.search).has('edit');
-// ── ?nodaiyu で大浴場パネルを非表示にし、露天風呂を全幅表示（スライドショー埋め込み用）──
-if(new URLSearchParams(location.search).has('nodaiyu')){
+// ── ?nodaiyu、または /yubatake 系URLでは大浴場パネルを非表示にし、
+//    露天風呂を全幅表示する（スライドショー埋め込み・/yubatake単独ページ用）──
+const IS_YUBATAKE_PATH=['/yubatake','/board','/bath/yubatake'].includes(location.pathname);
+if(new URLSearchParams(location.search).has('nodaiyu') || IS_YUBATAKE_PATH){
   document.getElementById('daiyokujo').style.display='none';
   document.getElementById('wrap').style.flex='1';
+}
+// /yubatake系URLでは、対応するトップバー右側（♨大浴場ラベル）・区切り線も不要なので隠す
+if(IS_YUBATAKE_PATH){
+  document.getElementById('topbar-r').style.display='none';
+  document.getElementById('topbar-l').style.flex='1';
+  const style=document.createElement('style');
+  style.textContent='body::after{display:none;}';
+  document.head.appendChild(style);
 }
 // ── 露天風呂スポット定義 ──
 const SPOTS = [
