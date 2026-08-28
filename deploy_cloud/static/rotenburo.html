@@ -124,7 +124,7 @@ const SPOTS = [
   { id:2, name:"中温の湯", u:0.318, v:0.540 },
   { id:3, name:"低温の湯", u:0.439, v:0.492 },
   { id:6, name:"立湯", u:0.643, v:0.455, lg:true },
-  { id:5, name:"座湯", u:0.624, v:0.780, lg:true, banned:true },
+  { id:5, name:"座湯", u:0.624, v:0.780, lg:true },
 ];
 
 // ── 移動可能な表示要素（湯畑文字・温度範囲の表・時計・現在地気温・脱衣所アイコン）──
@@ -143,7 +143,7 @@ const PIN_SCALE = 0.93;
 const CORNER_SCALE = 1;
 
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
-const DATSUIJO_SCALE = 1;
+const DATSUIJO_SCALE = 1.4;
 document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
 
 // ── 使用禁止表示の文言（CMSから編集）──
