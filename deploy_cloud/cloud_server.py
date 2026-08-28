@@ -28,40 +28,6 @@ STORE    = BASE_DIR / "latest.json"
 SECRET    = os.environ.get("PUSH_TOKEN")
 SUPA_URL  = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPA_KEY  = os.environ.get("SUPABASE_KEY", "")
-CMS_PASSWORD = os.environ.get("CMS_PASSWORD", "")
-
-# CMSで未設定の場合に使うデフォルト値（現状ハードコードされている値と同じ）
-DEFAULT_CONFIG = {
-    "color": {
-        "temp_threshold": 28, "temp_max": 40,
-        "hue_blue": 210, "sat_blue": 85,
-        "hue_warm_start": 55, "hue_warm_end": 0, "sat_warm": 92,
-        "grad_light": 50,
-    },
-    "pin_scale": 0.93,
-    "spots": [
-        {"id": 1, "name": "高温の湯", "u": 0.188, "v": 0.578},
-        {"id": 2, "name": "中温の湯", "u": 0.318, "v": 0.540},
-        {"id": 3, "name": "低温の湯", "u": 0.439, "v": 0.492},
-        {"id": 6, "name": "立湯", "u": 0.643, "v": 0.455, "lg": True},
-        {"id": 5, "name": "座湯", "u": 0.624, "v": 0.780, "lg": True},
-    ],
-    "ticker_text": "湯あみ着はエレベーター横のカゴまでお持ちください",
-    "slideshow": {
-        "bath_url": "/allcut?nodaiyu",
-        "images": [
-            "ChatGPT Image May 15, 2026, 08_26_50 PM.png",
-            "ChatGPT Image May 23, 2026, 11_16_35 PM.png",
-            "ChatGPT Image May 23, 2026, 11_26_28 PM.png",
-        ],
-    },
-    "bath_screens": [
-        {"label": "湯畑（配色版）", "url": "/allcut"},
-        {"label": "湯畑（大浴場なし）", "url": "/allcut?nodaiyu"},
-        {"label": "露天風呂メイン", "url": "/rotenburo"},
-        {"label": "湯畑（旧レイアウト）", "url": "/yubatake"},
-    ],
-}
 
 # Supabase 未設定時のフォールバック用（メモリ内履歴）
 HISTORY_MAX = 600
@@ -155,45 +121,6 @@ def supa_query_all(n=300):
         return None
 
 
-def supa_get_config():
-    """CMSの表示設定を取得。未保存 or Supabase未設定ならNoneを返す。"""
-    if not _supa_ok():
-        return None
-    try:
-        res = req.get(
-            f"{SUPA_URL}/rest/v1/site_config",
-            headers=_supa_headers(),
-            params={"select": "config", "order": "updated_at.desc", "limit": 1},
-            timeout=5,
-        )
-        rows = res.json()
-        return rows[0]["config"] if rows else None
-    except Exception:
-        return None
-
-
-def supa_save_config(config):
-    """CMSの表示設定を保存（既存行を全削除して1行だけ挿入）。"""
-    if not _supa_ok():
-        return False
-    try:
-        req.delete(
-            f"{SUPA_URL}/rest/v1/site_config",
-            headers=_supa_headers(),
-            params={"id": "gte.0"},
-            timeout=5,
-        )
-        res = req.post(
-            f"{SUPA_URL}/rest/v1/site_config",
-            headers={**_supa_headers(), "Prefer": "return=minimal"},
-            json={"config": config},
-            timeout=5,
-        )
-        return res.ok
-    except Exception:
-        return False
-
-
 # ── エンドポイント ──────────────────────────────────
 @app.post("/api/push")
 def api_push():
@@ -215,35 +142,6 @@ def api_baths():
                                   mimetype="application/json")
     return jsonify(baths=[], gateway=None, online=False)
 
-
-@app.get("/api/config")
-def api_config_get():
-    """案内板の表示設定（配色・テロップ・ピン位置など）。CMSで編集する。"""
-    config = supa_get_config()
-    return jsonify(config or DEFAULT_CONFIG)
-
-
-@app.post("/api/config")
-def api_config_set():
-    if not CMS_PASSWORD or request.headers.get("X-Token") != CMS_PASSWORD:
-        return jsonify(error="forbidden"), 403
-    config = request.get_json(silent=True)
-    if config is None:
-        return jsonify(error="no json"), 400
-    if not supa_save_config(config):
-        return jsonify(error="save failed（Supabaseのsite_configテーブルを確認してください）"), 500
-    return jsonify(ok=True)
-
-
-@app.get("/api/images")
-def api_images():
-    """静止画スライドショーで選べる画像一覧（static直下のpng/jpg/webp）。"""
-    exts = {".png", ".jpg", ".jpeg", ".webp"}
-    names = sorted(
-        p.name for p in (BASE_DIR / "static").iterdir()
-        if p.is_file() and p.suffix.lower() in exts
-    )
-    return jsonify(images=names)
 
 
 @app.get("/api/history")
@@ -316,11 +214,6 @@ def slideshow64():
 def board():
     return send_from_directory("static", "yubatake.html")
 
-@app.get("/base-all")
-@app.get("/all")
-def board_all():
-    return send_from_directory("static", "base-all.html")
-
 @app.get("/bath/yubatake")
 def bath_yubatake():
     return send_from_directory("static", "yubatake.html")
@@ -328,10 +221,6 @@ def bath_yubatake():
 @app.get("/bath/daiyokujo")
 def bath_daiyokujo():
     return send_from_directory("static", "daiyokujo.html")
-
-@app.get("/bath/all")
-def bath_all():
-    return send_from_directory("static", "base-all.html")
 
 @app.get("/allcut")
 @app.get("/base-all-cut")
@@ -345,10 +234,6 @@ def rotenburo():
 @app.get("/kanri")
 def kanri():
     return send_from_directory("static", "staff.html")
-
-@app.get("/kanri-settings")
-def kanri_settings():
-    return send_from_directory("static", "settings.html")
 
 
 
