@@ -122,6 +122,9 @@
   .bath-card .card-label{
     font-size:calc(1.4vw * var(--card-scale,1));color:#b8a884;font-weight:bold;letter-spacing:.12em;
   }
+  .bath-card .card-label-en{
+    display:block;font-size:calc(0.9vw * var(--card-scale,1));color:#8a8168;font-weight:bold;letter-spacing:.1em;
+  }
   .bath-card .card-name{
     font-size:calc(2.2vw * var(--card-scale,1));color:#f0e6cf;font-weight:900;letter-spacing:.08em;
   }
@@ -169,14 +172,14 @@
     <div id="daiyu-cards">
       <div class="bath-card" id="card-20">
         <div class="card-flag"></div>
-        <div class="card-label">男湯</div>
+        <div class="card-label">男湯<span class="card-label-en">Male</span></div>
         <div class="card-name">大浴場</div>
         <div class="card-temp" id="temp-20">--.-℃</div>
         <div class="card-upd" id="upd-20"></div>
       </div>
       <div class="bath-card" id="card-21">
         <div class="card-flag"></div>
-        <div class="card-label">女湯</div>
+        <div class="card-label">女湯<span class="card-label-en">Female</span></div>
         <div class="card-name">大浴場</div>
         <div class="card-temp" id="temp-21">--.-℃</div>
         <div class="card-upd" id="upd-21"></div>
