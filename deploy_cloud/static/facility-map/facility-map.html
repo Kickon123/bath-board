@@ -219,9 +219,15 @@ body::before {
   box-shadow: -20px 30px 44px rgba(40,90,130,0.3), 0 0 0 2px #2e93cf;
 }
 /* タップした階 → 正面を向いて手前にせり出す */
-.floor-block.active { position: relative; z-index: 50; }
+.floor-block.active {
+  position: relative;
+  z-index: 50;
+  width: min(94vw, 1180px);   /* 開いた階は横に広げて、部屋番号などの文字を大きく見せる */
+  transition: width 0.45s cubic-bezier(.2,.7,.3,1);
+}
+.floor-block.active .floor-row { margin-bottom: 24px; }
 .floor-block.active .floor-plate {
-  transform: rotateX(0deg) rotateZ(0deg) scale(1.04);
+  transform: rotateX(0deg) rotateZ(0deg) scale(1);
   box-shadow: 0 22px 50px rgba(40,90,130,0.34), 0 0 0 2px #2e93cf;
 }
 .floor-block.active .floor-plate img { height: auto; }
@@ -236,7 +242,7 @@ body::before {
   transition: max-height 0.5s ease, opacity 0.4s ease, margin-top 0.4s;
 }
 .floor-block.active .detail {
-  max-height: 800px;
+  max-height: 1400px;
   opacity: 1;
   margin-top: 14px;
   margin-bottom: 26px;
@@ -251,11 +257,11 @@ body::before {
 .detail-card .head {
   background: linear-gradient(135deg, var(--indigo), #2a385a);
   color: #fff;
-  padding: 12px 18px;
-  font-size: 0.95rem;
+  padding: 14px 20px;
+  font-size: 1.15rem;
   letter-spacing: 0.12em;
 }
-.detail-card .body { padding: 16px 18px 20px; }
+.detail-card .body { padding: 18px 20px 22px; }
 
 /* 設備ハイライト */
 .amenities {
@@ -293,25 +299,25 @@ body::before {
 
 /* 客室チップ */
 .rooms-label {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
   color: var(--gold-d);
   letter-spacing: 0.1em;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .room-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 9px;
 }
 .room-chip {
   font-family: 'Helvetica Neue', sans-serif;
-  font-size: 0.8rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--gold-d);
   background: var(--washi2);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 4px 10px;
+  padding: 6px 14px;
   letter-spacing: 0.03em;
 }
 /* 写真ありの部屋 */
