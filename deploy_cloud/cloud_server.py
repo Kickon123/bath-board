@@ -12,6 +12,7 @@
 """
 import json
 import os
+import time
 from collections import deque
 from pathlib import Path
 
@@ -24,7 +25,12 @@ CORS(app)
 
 BASE_DIR = Path(__file__).parent
 STORE    = BASE_DIR / "latest.json"
-BATH_CONFIG = BASE_DIR / "bath-config.json"   # スマホが取得する『温度取得対象リスト』（CMSが公開時に更新）
+BATH_CONFIG = BASE_DIR / "bath-config.json"   # スマホが取得する『温度取得対象リスト』（同梱・フォールバック用）
+# 通常は GitHub の raw を直接読む → CMS公開で再デプロイ不要・数十秒で反映
+BATH_CONFIG_URL = os.environ.get(
+    "BATH_CONFIG_URL",
+    "https://raw.githubusercontent.com/Kickon123/bath-board/main/deploy_cloud/bath-config.json")
+_bc_cache = {"t": 0.0, "body": None}
 
 SECRET    = os.environ.get("PUSH_TOKEN")
 SUPA_URL  = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -147,7 +153,19 @@ def api_baths():
 @app.get("/api/bath-config")
 def api_bath_config():
     """スマホ(run_lite.py)が毎サイクル取得する『温度取得対象リスト』。
-    CMSの露天風呂ピン公開時に bath-config.json が書き換わり、Renderが再デプロイして反映される。"""
+    GitHub の raw を直接読む（60秒キャッシュ）ので、CMSの公開で bath-config.json が
+    変わると再デプロイ無しで数十秒後に反映される。取得失敗時は同梱ファイルにフォールバック。"""
+    now = time.time()
+    if _bc_cache["body"] is not None and now - _bc_cache["t"] < 60:
+        return app.response_class(_bc_cache["body"], mimetype="application/json")
+    try:
+        r = req.get(BATH_CONFIG_URL, timeout=8)
+        if r.status_code == 200 and isinstance(r.json().get("baths"), list):
+            _bc_cache["body"] = r.text
+            _bc_cache["t"] = now
+            return app.response_class(r.text, mimetype="application/json")
+    except Exception:
+        pass
     if BATH_CONFIG.exists():
         return app.response_class(BATH_CONFIG.read_text(encoding="utf-8"),
                                   mimetype="application/json")
