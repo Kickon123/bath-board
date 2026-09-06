@@ -35,6 +35,7 @@ BASE_DIR    = Path(os.environ.get("BATH_DIR") or Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.json"
 TEMPS_PATH  = BASE_DIR / "temperatures.json"
 LOG_PATH    = BASE_DIR / "bath_system.log"
+REMOTE_BATHS_CACHE = BASE_DIR / "bath-config-cache.json"   # クラウドから取得した風呂一覧のキャッシュ
 
 # ── ログ設定 ──────────────────────────────────────────
 logging.basicConfig(
@@ -55,6 +56,33 @@ log = logging.getLogger("bath")
 def load_config() -> dict:
     with open(CONFIG_PATH, encoding="utf-8") as f:
         return json.load(f)
+
+
+def fetch_remote_baths(cfg: dict) -> list | None:
+    """クラウド(/api/bath-config)から『温度取得対象リスト』を取得する。
+    CMSで露天風呂ピンを追加/削除すると、ここが変わる。
+    取得失敗時はローカルキャッシュ→None（呼び出し側でローカルconfigにフォールバック）。"""
+    url = (cfg.get("cloud", {}).get("url") or "").rstrip("/")
+    if not url:
+        return None
+    try:
+        r = requests.get(url + "/api/bath-config", timeout=10)
+        data = r.json()
+        baths = data.get("baths")
+        if isinstance(baths, list) and baths and all(
+                isinstance(b.get("id"), int) and b.get("name") for b in baths):
+            REMOTE_BATHS_CACHE.write_text(
+                json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            return baths
+        log.info("  [風呂一覧] 取得したJSONの形式が不正 → 無視")
+    except Exception as e:
+        log.info(f"  [風呂一覧取得スキップ] {e}")
+    if REMOTE_BATHS_CACHE.exists():
+        try:
+            return json.loads(REMOTE_BATHS_CACHE.read_text(encoding="utf-8")).get("baths")
+        except Exception:
+            pass
+    return None
 
 
 # ── ADB コマンド実行 ──────────────────────────────────
@@ -493,9 +521,12 @@ def update_temps(cfg: dict, sensors: dict,
     now = datetime.now().isoformat()
     temps: dict = {}
     matched = 0
+    # センサー名の前後空白差を吸収して照合（例: "パントリー 3F" ↔ "パントリー3F"）
+    sensors_norm = {str(k).strip(): v for k, v in sensors.items()}
     for bath in cfg["baths"]:
-        sname = bath.get("sensor_name", bath["name"])
-        s = sensors.get(sname)
+        # sensor_name が無ければ表示名(name)でセンサーを探す（案a: ピン名=センサー名）
+        sname = (bath.get("sensor_name") or bath["name"]).strip()
+        s = sensors_norm.get(sname)
         bid = str(bath["id"])
         if s is None:
             # 個別取得失敗 → 前回値・最終取得時刻を引き継ぎ、その湯舟だけ未接続(stale)

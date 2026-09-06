@@ -24,6 +24,7 @@ CORS(app)
 
 BASE_DIR = Path(__file__).parent
 STORE    = BASE_DIR / "latest.json"
+BATH_CONFIG = BASE_DIR / "bath-config.json"   # スマホが取得する『温度取得対象リスト』（CMSが公開時に更新）
 
 SECRET    = os.environ.get("PUSH_TOKEN")
 SUPA_URL  = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -141,6 +142,16 @@ def api_baths():
         return app.response_class(STORE.read_text(encoding="utf-8"),
                                   mimetype="application/json")
     return jsonify(baths=[], gateway=None, online=False)
+
+
+@app.get("/api/bath-config")
+def api_bath_config():
+    """スマホ(run_lite.py)が毎サイクル取得する『温度取得対象リスト』。
+    CMSの露天風呂ピン公開時に bath-config.json が書き換わり、Renderが再デプロイして反映される。"""
+    if BATH_CONFIG.exists():
+        return app.response_class(BATH_CONFIG.read_text(encoding="utf-8"),
+                                  mimetype="application/json")
+    return jsonify(baths=[])
 
 
 

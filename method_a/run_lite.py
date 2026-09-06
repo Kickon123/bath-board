@@ -28,7 +28,7 @@ os.environ.setdefault("BATH_DIR", str(_HERE))
 # 共有コア（adb_reader）を import できるようにする
 sys.path.insert(0, str(_HERE.parent / "shared"))
 
-from adb_reader import load_config, run_once, load_temps, log
+from adb_reader import load_config, run_once, load_temps, log, fetch_remote_baths
 
 
 # ── /api/baths と同じ整形JSONをHTTP無しで組み立てる ──────
@@ -75,12 +75,35 @@ def push_to_cloud(cfg: dict):
         log.info(f"  [クラウド送信失敗] {e}")
 
 
+# ── クラウドの『温度取得対象リスト』をスマホに反映 ─────────
+def refresh_baths(cfg: dict):
+    """毎サイクル、クラウド(/api/bath-config)から風呂一覧を取得して cfg["baths"] を差し替える。
+    CMSで露天風呂ピンを追加/削除すると、次サイクルからスマホの取得対象も変わる。
+    - cfg["adb"] / cfg["cloud"] はローカル config.json のまま（baths だけリモート化）
+    - 取得失敗時はキャッシュ→ローカル config.json の baths（＝従来動作）
+    - このスマホが巡回しない Inkbird 機器(device)の風呂は除外
+    """
+    remote = fetch_remote_baths(cfg)
+    if not remote:
+        return
+    known = set(cfg["adb"].get("devices", []))
+    usable  = [b for b in remote if b.get("device", "湯畑") in known]
+    skipped = [b["name"] for b in remote if b.get("device", "湯畑") not in known]
+    if skipped:
+        log.info(f"  [未対応デバイスのためスキップ] {skipped}")
+    if usable and usable != cfg.get("baths"):
+        log.info(f"  [風呂一覧を更新] {[b['id'] for b in usable]}")
+    if usable:
+        cfg["baths"] = usable
+
+
 # ── ループ ────────────────────────────────────────────
 def run_loop(cfg: dict):
     interval = cfg["adb"].get("interval", 180)
     while True:
         try:
             log.info(f"【取得開始】次回は {interval}秒後")
+            refresh_baths(cfg)     # クラウドの取得対象リストを反映（CMSの露天風呂編集）
             run_once(cfg)          # Inkbird操作で取得 → temperatures.json 更新
             push_to_cloud(cfg)     # 整形JSONを Render へ送信
         except Exception as e:
@@ -97,6 +120,7 @@ if __name__ == "__main__":
 
     if "--once" in sys.argv:
         print("=== 軽量版: 1回取得して送信 ===")
+        refresh_baths(cfg)
         run_once(cfg)
         push_to_cloud(cfg)
     else:
