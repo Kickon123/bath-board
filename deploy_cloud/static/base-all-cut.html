@@ -44,7 +44,7 @@
     width:calc(2.6vw * var(--datsuijo-scale,1));height:auto;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.75));
     pointer-events:none;z-index:3;}
-  .pin{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;
+  .pin{position:absolute;transform:translate(-50%,-100%);transform-origin:center bottom;
     background:var(--lc,rgba(10,16,8,.85));border:2px solid rgba(255,255,255,.6);
     border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
@@ -335,18 +335,21 @@ function render(){
   let html='';
   for(const s of SPOTS){
     const px=ox+s.u*dw, py=oy+s.v*dh;
-    const bx=(s.pu!=null)?ox+s.pu*dw:px;
-    const by=(s.pv!=null)?oy+s.pv*dh:py-DEF;
+    const hasBox=(s.pu!=null&&s.pv!=null);
+    const bx=hasBox?ox+s.pu*dw:px;
+    const by=hasBox?oy+s.pv*dh:py-DEF;
     const dist=Math.hypot(bx-px,by-py);
     const ang=Math.atan2(by-py,bx-px)*180/Math.PI;
     const sc=s.scale||1;
+    const tf=hasBox?'translate(-50%,-50%)':'translate(-50%,-100%)';
+    const tfStyle=(hasBox||sc!==1)?`;transform:${tf}${sc!==1?` scale(${sc})`:''}`:'';
     const t=tempMap[s.id];
     const lc=tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
     html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc}${sc!==1?`;transform:translate(-50%,-50%) scale(${sc})`:''}">
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc}${tfStyle}">
       ${s.hideName?'':`<div class="nm">${s.name}</div>`}
       ${s.banned?'':`<div class="tp">${label}</div>`}
       ${s.banned?`<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span>`:''}
