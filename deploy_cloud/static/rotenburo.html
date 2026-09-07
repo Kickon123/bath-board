@@ -44,20 +44,18 @@
     width:calc(2.6vw * var(--datsuijo-scale,1));height:auto;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.75));
     pointer-events:none;z-index:3;}
-  .pin{position:absolute;transform:translate(-50%,-100%);
+  .pin{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;
     background:var(--lc,rgba(10,16,8,.85));border:2px solid rgba(255,255,255,.6);
     border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
-    box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;}
-  .pin::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
-    border:6px solid transparent;border-top-color:var(--lc,rgba(10,16,8,.85));}
+    box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
   .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
   .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
   .pin.sm .nm{font-size:var(--pin-sm-nm,1.4vw);}
   .pin.sm .tp{font-size:var(--pin-sm-tp,2.2vw);}
   .pin.lg .nm{font-size:var(--pin-lg-nm,1.8vw);}
   .pin.lg .tp{font-size:var(--pin-lg-tp,3.0vw);}
-  .line{position:absolute;transform:translateX(-50%);width:3px;
-    background:rgba(255,255,255,0.55);pointer-events:none;}
+  .line{position:absolute;height:3px;transform-origin:0 50%;
+    background:rgba(255,255,255,0.55);pointer-events:none;z-index:3;}
   .pin.stale{border-style:dashed;opacity:.9;}
   .pin .old{font-size:.55vw;color:#ffd24a;font-weight:bold;display:block;}
   .pin .ban{display:block;margin-top:4px;background:#c0392b;color:#fff;font-weight:900;
@@ -216,18 +214,24 @@ function render(){
   r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
-  const lineH=Math.round(p*4.8);
+  const DEF=Math.round(p*4.8);   // 箱の既定オフセット（ドットの少し上）
 
   let html='';
   for(const s of SPOTS){
     const px=ox+s.u*dw, py=oy+s.v*dh;
+    // 箱の中心。pu/pv があればそこ、無ければドットの少し上
+    const bx=(s.pu!=null)?ox+s.pu*dw:px;
+    const by=(s.pv!=null)?oy+s.pv*dh:py-DEF;
+    const dist=Math.hypot(bx-px,by-py);
+    const ang=Math.atan2(by-py,bx-px)*180/Math.PI;
+    const sc=s.scale||1;
     const t=tempMap[s.id];
     const lc=tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
-    html+=`<div class="line" style="left:${px}px;top:${py-lineH}px;height:${lineH}px;background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${px}px;top:${py-lineH}px;--lc:${lc}">
+    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc}${sc!==1?`;transform:translate(-50%,-50%) scale(${sc})`:''}">
       ${s.hideName?'':`<div class="nm">${s.name}</div>`}
       ${s.banned?'':`<div class="tp">${label}</div>`}
       ${s.banned?`<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span>`:''}
@@ -323,7 +327,7 @@ if(EDIT_MODE){
   };
 
   function epUpdate(){
-    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)} },`);
+    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''} },`);
     const flines=FLOATS.map(f=>`  { key:"${f.key}", name:"${f.name}", u:${f.u.toFixed(3)}, v:${f.v.toFixed(3)} },`);
     document.getElementById('ep-out').textContent=
       'const SPOTS = [\n'+lines.join('\n')+'\n];\n\n'+
