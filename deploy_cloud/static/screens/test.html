@@ -72,6 +72,10 @@
     width:calc(20vw * var(--yugata-scale,1));height:auto;max-width:none;object-fit:contain;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
     pointer-events:none;z-index:3;}
+  #wrap img.custom-icon{position:absolute;transform:translate(-50%,-50%);
+    height:auto;max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
+    pointer-events:none;z-index:3;}
   #legend{position:absolute;transform:translate(-50%,-50%);
     width:max-content;
     background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
@@ -144,6 +148,9 @@ document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
 // ── 湯畑アイコンの大きさ（CMSから調整）──
 const YUGATA_SCALE = 1;
 document.documentElement.style.setProperty('--yugata-scale', YUGATA_SCALE);
+
+// ── 追加アイコン（CMSで複数追加）── [{key,src,scale}]
+const CUSTOM_ICONS = [];
 
 // ── 使用禁止表示の文言（CMSから編集）──
 const BAN_TEXT_JA = "使用禁止";
@@ -262,6 +269,16 @@ function render(){
     lineEl.style.width=(py-by)+'px';
     lineEl.style.transform='rotate(-90deg)';   // 真上
   });
+
+  // 追加アイコン: CUSTOM_ICONS から img を生成・更新・不要分を除去
+  const _wrapEl=document.getElementById('wrap');
+  for(const ic of CUSTOM_ICONS){
+    let el=document.getElementById(ic.key);
+    if(!el){ el=document.createElement('img'); el.id=ic.key; el.className='custom-icon'; el.alt=''; _wrapEl.appendChild(el); }
+    if(el.getAttribute('src')!==ic.src) el.src=ic.src;
+    el.style.width='calc('+(10*(ic.scale||1)).toFixed(2)+'vw)';
+  }
+  _wrapEl.querySelectorAll('img.custom-icon').forEach(el=>{ if(!CUSTOM_ICONS.some(ic=>ic.key===el.id)) el.remove(); });
 
   for(const f of FLOATS){
     const el=document.getElementById(f.key);
