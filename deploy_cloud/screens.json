@@ -3,5 +3,11 @@
     "slug": "test",
     "name": "テスト",
     "base": "rotenburo"
+  },
+  {
+    "slug": "rotenburo2",
+    "name": "露天風呂マップ",
+    "base": "rotenburo",
+    "notelop": true
   }
 ]
