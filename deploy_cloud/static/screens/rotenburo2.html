@@ -39,9 +39,9 @@
   /* ── 露天風呂 ── */
   #wrap{position:relative;flex:1;overflow:hidden;background:#2c380b;}
   #wrap img{width:100%;height:100%;object-fit:cover;display:block;}
-  #wrap img#male-icon, #wrap img#female-icon{
+  #wrap img#datsuijo{
     position:absolute;transform:translate(-50%,-50%);
-    width:calc(2.6vw * var(--datsuijo-scale,1));height:auto;
+    width:calc(7vw * var(--datsuijo-scale,1));height:auto;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.75));
     pointer-events:none;z-index:3;}
   .pin{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;
@@ -99,8 +99,7 @@
       <div class="gradlabels"><span>40℃+</span><span>28℃-</span></div>
     </div>
   </div>
-  <img src="/static/male-icon.png" id="male-icon" alt="男性用脱衣所"/>
-  <img src="/static/female-icon.png" id="female-icon" alt="女性用脱衣所"/>
+  <img src="/static/datsuijo.png" id="datsuijo" alt="脱衣所"/>
   <div id="corner-location">
     <span>📍石川県山中</span>
     <span class="t" id="at">--.-℃</span>
@@ -127,8 +126,7 @@ const FLOATS = [
   { key:"legend", name:"温度範囲", u:0.088, v:0.581 },
   { key:"corner-time", name:"時刻", u:0.930, v:0.850 },
   { key:"corner-location", name:"現在地・気温", u:0.130, v:0.841 },
-  { key:"male-icon", name:"脱衣所(男性)アイコン", u:0.338, v:0.381 },
-  { key:"female-icon", name:"脱衣所(女性)アイコン", u:0.332, v:0.479 },
+  { key:"datsuijo", name:"脱衣所アイコン", u:0.335, v:0.430 },
 ];
 
 // ── ピンの大きさ（CMSから調整）──
