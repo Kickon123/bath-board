@@ -50,8 +50,10 @@
     border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
   /* 使用禁止のピンは箱を大きくせず、文字を縮小して収める */
-  .pin.banned{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    max-width:var(--pin-ban-w,190px);}
+  .pin.banned{width:var(--pin-ban-w,150px);height:var(--pin-ban-h,78px);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;padding:4px 6px;}
+  .pin .ban-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;
+    transform-origin:center center;white-space:nowrap;}
   .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
   .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
   .pin.sm .nm{font-size:var(--pin-sm-nm,1.4vw);}
@@ -215,7 +217,8 @@ function render(){
   r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
-  r.style.setProperty('--pin-ban-w',(p*19*PIN_SCALE).toFixed(1)+'px');   // 使用禁止ピンの箱の横幅上限
+  r.style.setProperty('--pin-ban-w',(p*14.5*PIN_SCALE).toFixed(1)+'px');   // 使用禁止ピンの箱（通常ピン相当・固定）
+  r.style.setProperty('--pin-ban-h',(p*8*PIN_SCALE).toFixed(1)+'px');
   const GAP=Math.round(p*4.8);   // ドットと箱の隙間（pu/pv 未指定時）
 
   // 箱は常に「中心」を基準に配置。ラインはドット→箱の中心。
@@ -237,10 +240,9 @@ function render(){
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
     html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
     html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}">
-      ${s.hideName?'':`<div class="nm">${s.name}</div>`}
-      ${s.banned?'':`<div class="tp">${label}</div>`}
-      ${s.banned?`<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span>`:''}
-      ${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}
+      ${s.banned
+        ? `<div class="ban-wrap">${s.hideName?'':`<div class="nm">${s.name}</div>`}<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span></div>`
+        : `${s.hideName?'':`<div class="nm">${s.name}</div>`}<div class="tp">${label}</div>${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}`}
     </div>`;
   }
   pinsEl.innerHTML=html;
@@ -249,11 +251,14 @@ function render(){
   const kids=pinsEl.children;
   SPOTS.forEach((s,k)=>{
     const lineEl=kids[k*3+1], pinEl=kids[k*3+2];
-    // 使用禁止ピン: 「使用禁止/メンテナンス中」の行だけ、横幅上限を超えたら縮小（名前は縮めない）
+    // 使用禁止ピン: 箱は通常ピンと同じ固定サイズ。文字ブロック全体を等倍で縮小して収める
     if(s.banned){
-      const be=pinEl.querySelector('.ban');
-      if(be){ let fs=parseFloat(getComputedStyle(be).fontSize), g=0;
-        while(pinEl.scrollWidth>pinEl.clientWidth+1 && fs>11 && g++<30){ fs-=0.5; be.style.fontSize=fs+'px'; } }
+      const w=pinEl.querySelector('.ban-wrap');
+      if(w){
+        w.style.transform='';
+        const sc2=Math.min((pinEl.clientWidth-8)/w.scrollWidth, (pinEl.clientHeight-8)/w.scrollHeight, 1);
+        if(sc2<1) w.style.transform='scale('+sc2.toFixed(3)+')';
+      }
     }
     if(s.pu!=null&&s.pv!=null) return;
     const px=ox+s.u*dw, py=oy+s.v*dh;
