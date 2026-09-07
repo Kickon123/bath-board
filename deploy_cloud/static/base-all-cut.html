@@ -58,7 +58,7 @@
     background:rgba(255,255,255,0.55);pointer-events:none;z-index:3;}
   .pin.stale{border-style:dashed;opacity:.9;}
   .pin .old{font-size:1.0vw;color:#ffd24a;font-weight:bold;display:block;margin-top:2px;}
-  .pin .ban{display:block;margin-top:4px;background:#c0392b;color:#fff;font-weight:900;
+  .pin .ban{display:block;margin-top:4px;background:#828282;color:#fff;font-weight:900;
     font-size:var(--pin-tp,2.6vw);padding:3px 10px;border-radius:6px;letter-spacing:.05em;}
   .pin.sm .ban{font-size:var(--pin-sm-tp,2.2vw);}
   .pin.lg .ban{font-size:calc(var(--pin-lg-tp,3.0vw) * 0.6);}
@@ -344,7 +344,7 @@ function render(){
     const sc=s.scale||1;
     const scStyle=sc!==1?` scale(${sc})`:'';
     const t=tempMap[s.id];
-    const lc=tempColor(s.id, t);
+    const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
