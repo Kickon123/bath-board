@@ -134,7 +134,7 @@ const FLOATS = [
 const PIN_SCALE = 0.93;
 
 // ── 時刻・現在地/気温の大きさ（CMSから調整）──
-const CORNER_SCALE = 0.85;
+const CORNER_SCALE = 0.8;
 
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.6;
@@ -145,10 +145,11 @@ const YUGATA_SCALE = 1;
 document.documentElement.style.setProperty('--yugata-scale', YUGATA_SCALE);
 
 // ── 追加アイコン（CMSで複数追加）── [{key,src,scale}]
-const CUSTOM_ICONS = [];
+const CUSTOM_ICONS = [
+];
 
 // ── 使用禁止表示の文言（CMSから編集）──
-const BAN_TEXT_JA = "使用禁止";
+const BAN_TEXT_JA = "メンテナンス中";
 const BAN_TEXT_EN = "Closed";
 document.documentElement.style.setProperty('--corner-scale', CORNER_SCALE);
 
