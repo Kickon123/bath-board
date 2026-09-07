@@ -9,5 +9,10 @@
     "name": "露天風呂マップ",
     "base": "rotenburo",
     "notelop": true
+  },
+  {
+    "slug": "ttt",
+    "name": "Test",
+    "base": "allcut"
   }
 ]
