@@ -68,16 +68,10 @@
   .pin .ban-en{display:block;font-size:.55em;font-weight:700;letter-spacing:.04em;margin-top:1px;}
   .dot{position:absolute;transform:translate(-50%,-50%);
     width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
-  #yugata{position:absolute;transform:translate(-50%,-50%);
-    font-size:2.9vw;font-weight:900;letter-spacing:.18em;white-space:nowrap;
-    background:linear-gradient(180deg,#fff9e6 0%,#FFD700 45%,#FF6B00 100%);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-    filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));
-    animation:yugata-pulse 3s ease-in-out infinite;pointer-events:none;}
-  @keyframes yugata-pulse{
-    0%,100%{filter:drop-shadow(0 0 18px rgba(255,180,0,.95)) drop-shadow(0 0 40px rgba(255,100,0,.6));}
-    50%{filter:drop-shadow(0 0 28px rgba(255,210,0,1)) drop-shadow(0 0 60px rgba(255,130,0,.8));}
-  }
+  #wrap img#yugata{position:absolute;transform:translate(-50%,-50%);
+    width:calc(20vw * var(--yugata-scale,1));height:auto;max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
+    pointer-events:none;z-index:3;}
   #legend{position:absolute;transform:translate(-50%,-50%);
     width:max-content;
     background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
@@ -192,7 +186,7 @@
   <div id="wrap">
     <img src="/static/cut.png" id="photo" alt="湯畑"/>
     <div id="pins"></div>
-    <div id="yugata">湯畑/Yubatake</div>
+    <img src="/static/yugata.png" id="yugata" alt="湯畑"/>
     <div id="legend">
       <div class="legend-row">
         <div id="legend-gradbar" class="gradbar"></div>
@@ -246,6 +240,10 @@ document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.9;
 document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
+
+// ── 湯畑アイコンの大きさ（CMSから調整）──
+const YUGATA_SCALE = 1;
+document.documentElement.style.setProperty('--yugata-scale', YUGATA_SCALE);
 
 // ── 使用禁止表示の文言（CMSから編集）──
 const BAN_TEXT_JA = "使用禁止";
