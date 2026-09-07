@@ -45,8 +45,10 @@
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.75));
     pointer-events:none;z-index:3;}
   .pin{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;
+    width:var(--pin-w,120px);height:var(--pin-h,64px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:var(--lc,rgba(10,16,8,.85));border:2px solid rgba(255,255,255,.6);
-    border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
+    border-radius:12px;padding:3px 6px;text-align:center;white-space:nowrap;overflow:hidden;
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
   .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
   .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
@@ -330,6 +332,8 @@ function render(){
   r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-w',(p*17.5*PIN_SCALE).toFixed(1)+'px');   // 箱の大きさは全ピン統一
+  r.style.setProperty('--pin-h',(p*8.0*PIN_SCALE).toFixed(1)+'px');
   const GAP=Math.round(p*4.8);   // ドットと箱の隙間（pu/pv 未指定時）
 
   // 箱は常に「中心」基準で配置。ラインはドット→箱の中心。
@@ -341,15 +345,13 @@ function render(){
     const by=hasBox?oy+s.pv*dh:py-GAP;   // 仮
     const dist=Math.hypot(bx-px,by-py);
     const ang=Math.atan2(by-py,bx-px)*180/Math.PI;
-    const sc=s.scale||1;
-    const scStyle=sc!==1?` scale(${sc})`:'';
     const t=tempMap[s.id];
     const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
     html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}">
+    html+=`<div class="pin${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)">
       ${s.hideName?'':`<div class="nm">${s.name}</div>`}
       ${s.banned?'':`<div class="tp">${label}</div>`}
       ${s.banned?`<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span>`:''}
@@ -361,8 +363,15 @@ function render(){
   // pu/pv 未指定: 箱の高さを測り、中心を「ドットから GAP + 箱の半分」上に
   const kids=pinsEl.children;
   SPOTS.forEach((s,k)=>{
-    if(s.pu!=null&&s.pv!=null) return;
     const lineEl=kids[k*3+1], pinEl=kids[k*3+2];
+    // 箱の大きさは統一。文字がはみ出す時だけフォントを縮小する。
+    for(const c of pinEl.children){
+      let fs=parseFloat(getComputedStyle(c).fontSize), g=0;
+      while((c.scrollWidth>pinEl.clientWidth || pinEl.scrollHeight>pinEl.clientHeight+1) && fs>6 && g++<40){
+        fs-=0.5; c.style.fontSize=fs+'px';
+      }
+    }
+    if(s.pu!=null&&s.pv!=null) return;
     const px=ox+s.u*dw, py=oy+s.v*dh;
     const by=Math.round(py - GAP - pinEl.offsetHeight/2);
     pinEl.style.top=by+'px';
