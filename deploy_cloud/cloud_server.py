@@ -266,6 +266,20 @@ def kanri():
     return send_from_directory("static", "staff.html")
 
 
+import re as _re
+_SCREEN_SLUG_RE = _re.compile(r"^[a-z0-9][a-z0-9-]{0,30}$")
+
+@app.get("/s/<slug>")
+def custom_screen(slug):
+    """CMSで追加した画面。static/screens/<slug>.html を配信（背景は /static/screens/<slug>.png）。"""
+    if not _SCREEN_SLUG_RE.match(slug or ""):
+        return "not found", 404
+    f = BASE_DIR / "static" / "screens" / f"{slug}.html"
+    if not f.is_file():
+        return "not found", 404
+    return send_from_directory(str(BASE_DIR / "static" / "screens"), f"{slug}.html")
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
