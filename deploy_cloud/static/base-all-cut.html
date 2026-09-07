@@ -50,7 +50,8 @@
     border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
     box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
   /* 使用禁止のピンは箱を大きくせず、文字を縮小して収める */
-  .pin.banned{max-width:var(--pin-ban-w,150px);max-height:var(--pin-ban-h,80px);overflow:hidden;}
+  .pin.banned{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    max-width:var(--pin-ban-w,190px);}
   .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
   .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
   .pin.sm .nm{font-size:var(--pin-sm-nm,1.4vw);}
@@ -61,11 +62,11 @@
     background:rgba(255,255,255,0.55);pointer-events:none;z-index:3;}
   .pin.stale{border-style:dashed;opacity:.9;}
   .pin .old{font-size:1.0vw;color:#ffd24a;font-weight:bold;display:block;margin-top:2px;}
-  .pin .ban{display:block;margin-top:4px;background:#828282;color:#fff;font-weight:900;
-    font-size:var(--pin-tp,2.6vw);padding:3px 10px;border-radius:6px;letter-spacing:.05em;}
+  .pin .ban{display:flex;flex-direction:column;align-items:center;margin:0;color:#fff;font-weight:900;
+    font-size:var(--pin-tp,2.6vw);line-height:1.12;letter-spacing:.03em;}
   .pin.sm .ban{font-size:var(--pin-sm-tp,2.2vw);}
   .pin.lg .ban{font-size:calc(var(--pin-lg-tp,3.0vw) * 0.6);}
-  .pin .ban-en{display:block;font-size:.55em;font-weight:700;letter-spacing:.04em;margin-top:1px;}
+  .pin .ban-en{display:block;font-size:.72em;font-weight:800;letter-spacing:.08em;margin-top:2px;}
   .dot{position:absolute;transform:translate(-50%,-50%);
     width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
   #wrap img#yugata{position:absolute;transform:translate(-50%,-50%);
@@ -337,8 +338,7 @@ function render(){
   r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
   r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
-  r.style.setProperty('--pin-ban-w',(p*15.5*PIN_SCALE).toFixed(1)+'px');   // 使用禁止ピンの箱の上限
-  r.style.setProperty('--pin-ban-h',(p*8.5*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-ban-w',(p*19*PIN_SCALE).toFixed(1)+'px');   // 使用禁止ピンの箱の横幅上限
   const GAP=Math.round(p*4.8);   // ドットと箱の隙間（pu/pv 未指定時）
 
   // 箱は常に「中心」基準で配置。ラインはドット→箱の中心。
@@ -371,14 +371,11 @@ function render(){
   const kids=pinsEl.children;
   SPOTS.forEach((s,k)=>{
     const lineEl=kids[k*3+1], pinEl=kids[k*3+2];
-    // 使用禁止ピンだけ: 箱が上限を超えたら文字を縮小して収める（箱は大きくしない）
+    // 使用禁止ピン: 「使用禁止/メンテナンス中」の行だけ、横幅上限を超えたら縮小（名前は縮めない）
     if(s.banned){
-      for(const c of pinEl.children){
-        let fs=parseFloat(getComputedStyle(c).fontSize), g=0;
-        while((pinEl.scrollWidth>pinEl.clientWidth+1 || pinEl.scrollHeight>pinEl.clientHeight+1) && fs>6 && g++<40){
-          fs-=0.5; c.style.fontSize=fs+'px';
-        }
-      }
+      const be=pinEl.querySelector('.ban');
+      if(be){ let fs=parseFloat(getComputedStyle(be).fontSize), g=0;
+        while(pinEl.scrollWidth>pinEl.clientWidth+1 && fs>11 && g++<30){ fs-=0.5; be.style.fontSize=fs+'px'; } }
     }
     if(s.pu!=null&&s.pv!=null) return;
     const px=ox+s.u*dw, py=oy+s.v*dh;
