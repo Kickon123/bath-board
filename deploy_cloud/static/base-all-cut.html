@@ -26,6 +26,7 @@
   #info .upd{color:#9aaa8a;font-size:1.0vw;}
   #info span:first-child{color:#f0e6cf;font-weight:bold;}
   #upd, .connbadge{display:none;}
+  body.hide-corner #info, body.hide-corner #clock{display:none!important;}
   .connbadge{font-size:0.85vw;font-weight:bold;padding:2px 6px;border-radius:10px;}
   .connbadge.ok{color:#8fe39a;background:rgba(40,120,60,.35);}
   .connbadge.warn{color:#ffd24a;background:rgba(150,110,20,.45);}
@@ -245,6 +246,10 @@ const FLOATS = [
 const PIN_SCALE = 0.93;
 const CARD_SCALE = 1;
 document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
+
+// ── 現在地・時刻のリアルタイム表示（CMSから 表示/非表示）──
+const SHOW_CORNER = true;
+if(!SHOW_CORNER) document.body.classList.add('hide-corner');
 
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.65;
