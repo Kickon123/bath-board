@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>大浴場 温度マップ</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0d140a;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
+    height:100vh;display:flex;flex-direction:column;}
+
+  /* ── トップバー（テロップのみ） ── */
+  #topbar{display:flex;align-items:center;background:rgba(10,18,8,.8);flex-shrink:0;
+    padding:20px 4px;}
+
+  /* ── 流れるテロップ（2つ並べてシームレスにループ、途切れなし） ── */
+  #ticker-wrap{flex:1;overflow:hidden;height:6vw;position:relative;}
+  #ticker-track{display:flex;align-items:center;height:100%;white-space:nowrap;width:max-content;
+    animation:ticker 24s linear infinite;}
+  .ticker-item{display:inline-block;padding-right:120px;
+    font-size:3.8vw;color:#FFD700;font-weight:bold;letter-spacing:.08em;}
+  @keyframes ticker{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
+  /* 上部見出しを「タイトル（静止）」表示にした場合 */
+  #header-title{display:none;flex:1;color:#FFD700;font-weight:bold;letter-spacing:.06em;
+    font-size:3.8vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 24px;}
+
+  /* ── 時計 / 現在地・気温（位置・大きさともCMSから調整可能） ── */
+  #corner-time, #corner-location{
+    position:absolute;transform:translate(-50%,-50%);z-index:20;
+    background:rgba(10,18,8,.75);color:#f0e6cf;font-weight:bold;
+    padding:calc(20px * var(--corner-scale,1)) calc(27px * var(--corner-scale,1));
+    border-radius:14px;font-size:calc(2.3vw * var(--corner-scale,1));
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;}
+  #corner-location{display:flex;gap:12px;align-items:center;}
+  #corner-location .t{color:#fff;}
+  #upd, .connbadge{display:none;}
+  body.hide-corner #corner-time, body.hide-corner #corner-location{display:none!important;}
+
+  /* ── 露天風呂 ── */
+  #wrap{position:relative;flex:1;overflow:hidden;background:#2c380b;}
+  #wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+  #wrap img#datsuijo{
+    position:absolute;transform:translate(-50%,-50%);
+    width:calc(12vw * var(--datsuijo-scale,1));height:auto;
+    max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.75));
+    pointer-events:none;z-index:3;}
+  .pin{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;
+    background:var(--lc,rgba(10,16,8,.85));border:2px solid rgba(255,255,255,.6);
+    border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
+    box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
+  /* 使用禁止のピンは箱を大きくせず、文字を縮小して収める */
+  .pin.banned{width:var(--pin-ban-w,150px);height:var(--pin-ban-h,78px);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;padding:4px 6px;}
+  .pin .ban-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;
+    transform-origin:center center;white-space:nowrap;}
+  .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
+  .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
+  .pin.sm .nm{font-size:var(--pin-sm-nm,1.4vw);}
+  .pin.sm .tp{font-size:var(--pin-sm-tp,2.2vw);}
+  .pin.lg .nm{font-size:var(--pin-lg-nm,1.8vw);}
+  .pin.lg .tp{font-size:var(--pin-lg-tp,3.0vw);}
+  .line{position:absolute;height:3px;transform-origin:0 50%;
+    background:rgba(255,255,255,0.55);pointer-events:none;z-index:3;}
+  .pin.stale{border-style:dashed;opacity:.9;}
+  .pin .old{font-size:.55vw;color:#ffd24a;font-weight:bold;display:block;}
+  .pin .ban{display:flex;flex-direction:column;align-items:center;margin:0;color:#fff;font-weight:900;
+    font-size:var(--pin-tp,2.6vw);line-height:1.12;letter-spacing:.03em;}
+  .pin.sm .ban{font-size:var(--pin-sm-tp,2.2vw);}
+  .pin.lg .ban{font-size:calc(var(--pin-lg-tp,3.0vw) * 0.6);}
+  .pin .ban-en{display:block;font-size:.72em;font-weight:800;letter-spacing:.08em;margin-top:2px;}
+  .dot{position:absolute;transform:translate(-50%,-50%);
+    width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
+  #wrap img#yugata{position:absolute;transform:translate(-50%,-50%);
+    width:calc(20vw * var(--yugata-scale,1));height:auto;max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
+    pointer-events:none;z-index:3;}
+  #wrap img.custom-icon{position:absolute;transform:translate(-50%,-50%);
+    height:auto;max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
+    pointer-events:none;z-index:3;}
+  #legend{position:absolute;transform:translate(-50%,-50%);
+    width:max-content;
+    background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
+    border-radius:14px;font-size:0.9vw;}
+  #legend .legend-row{display:flex;align-items:stretch;gap:14px;}
+  #legend .gradbar{width:2.8vw;height:18vh;border-radius:10px;flex-shrink:0;}
+  #legend .gradlabels{display:flex;flex-direction:column;justify-content:space-between;
+    font-size:1.4vw;font-weight:bold;color:#f0e6cf;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="ticker-wrap"><div id="ticker-track">
+    <span class="ticker-item">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator</span>
+    <span class="ticker-item">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator</span>
+  </div></div>
+  <h1 id="header-title"></h1>
+</div>
+
+<div id="wrap">
+  <img src="/static/screens/daiyokujyou.png?v=1788853369" id="photo" alt="湯畑"/>
+  <div id="pins"></div>
+  <img src="/static/yugata.png" id="yugata" alt="湯畑"/>
+  <div id="legend">
+    <div class="legend-row">
+      <div id="legend-gradbar" class="gradbar"></div>
+      <div class="gradlabels"><span>40℃+</span><span>28℃-</span></div>
+    </div>
+  </div>
+  <img src="/static/datsuijo.png" id="datsuijo" alt="脱衣所"/>
+  <div id="corner-location">
+    <span>📍石川県山中</span>
+    <span class="t" id="at">--.-℃</span>
+    <span class="upd" id="upd"></span>
+    <span id="conn" class="connbadge ok">🟢 接続中</span>
+  </div>
+  <div id="corner-time">--:--:--</div>
+</div>
+
+<script>
+const EDIT_MODE=new URLSearchParams(location.search).has('edit');
+// ── 露天風呂スポット定義 ──
+const SPOTS = [
+];
+
+// ── 移動可能な表示要素（湯畑文字・温度範囲の表・時計・現在地気温・男女脱衣所アイコン）──
+const FLOATS = [
+  { key:"yugata", name:"湯畑文字", u:0.785, v:0.164 },
+  { key:"legend", name:"温度範囲", u:0.103, v:0.299 },
+  { key:"corner-time", name:"時刻", u:0.908, v:0.807 },
+  { key:"corner-location", name:"現在地・気温", u:0.681, v:0.807 },
+  { key:"datsuijo", name:"脱衣所アイコン", u:0.291, v:0.428 },
+];
+
+// ── ピンの大きさ（CMSから調整）──
+const PIN_SCALE = 0.93;
+
+// ── 時刻・現在地/気温の大きさ（CMSから調整）──
+const CORNER_SCALE = 0.7;
+
+// ── 現在地・時刻のリアルタイム表示（CMSから 表示/非表示）──
+const SHOW_CORNER = true;
+
+// ── 上部の見出し（CMSから：タイトル/テロップ/なし・文言・大きさ・寄せ）──
+const HEADER_MODE  = "ticker";      // "title" | "ticker" | "none"
+const HEADER_TEXT  = "湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator";
+const HEADER_SCALE = 1;
+const HEADER_ALIGN = "center";       // "left" | "center" | "right"
+(function(){
+  const bar = document.getElementById('topbar');
+  if(!bar) return;
+  if(HEADER_MODE === 'none'){ bar.style.display = 'none'; return; }
+  const tw = document.getElementById('ticker-wrap');
+  const ht = document.getElementById('header-title');
+  if(HEADER_MODE === 'title'){
+    if(tw) tw.style.display = 'none';
+    if(ht){
+      ht.style.display = 'block';
+      ht.textContent = HEADER_TEXT;
+      ht.style.fontSize = (3.8 * HEADER_SCALE) + 'vw';
+      ht.style.textAlign = HEADER_ALIGN;
+    }
+  }else{ // ticker
+    document.querySelectorAll('.ticker-item').forEach(s=>{
+      s.textContent = HEADER_TEXT;
+      s.style.fontSize = (3.8 * HEADER_SCALE) + 'vw';
+    });
+  }
+})();
+
+// ── 脱衣所アイコンの大きさ（CMSから調整）──
+const DATSUIJO_SCALE = 0.7;
+document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
+
+// ── 湯畑アイコンの大きさ（CMSから調整）──
+const YUGATA_SCALE = 1.25;
+document.documentElement.style.setProperty('--yugata-scale', YUGATA_SCALE);
+
+// ── 追加アイコン（CMSで複数追加）── [{key,src,scale}]
+const CUSTOM_ICONS = [
+];
+
+// ── 使用禁止表示の文言（CMSから編集）──
+const BAN_TEXT_JA = "メンテナンス中";
+const BAN_TEXT_EN = "Closed";
+document.documentElement.style.setProperty('--corner-scale', CORNER_SCALE);
+if(!SHOW_CORNER) document.body.classList.add('hide-corner');
+
+// 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
+// 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
+const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
+const HUE_BLUE = 210, SAT_BLUE = 85;
+const HUE_WARM_START = 55, HUE_WARM_END = 0, SAT_WARM = 92;
+const GRAD_LIGHT = 50;
+function hslToRgb(h,s,l){
+  s/=100; l/=100;
+  const k=n=>(n+h/30)%12;
+  const a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [255*f(0),255*f(8),255*f(4)];
+}
+function tempGradRgb(t){
+  if(t<=TEMP_THRESHOLD) return hslToRgb(HUE_BLUE, SAT_BLUE, GRAD_LIGHT);
+  const clamped=Math.min(TEMP_MAX, t);
+  const f=(clamped-TEMP_THRESHOLD)/(TEMP_MAX-TEMP_THRESHOLD);
+  const hue=HUE_WARM_START+(HUE_WARM_END-HUE_WARM_START)*f;
+  return hslToRgb(hue, SAT_WARM, GRAD_LIGHT);
+}
+function tempColor(id, t){
+  if(id===6) return 'rgba(58,144,216,.9)'; // 立湯は常に青固定
+  if(t==null) return 'rgba(90,100,86,.85)';
+  if(id===5 && t<=29){ // 座湯は閑散期(未加温=29℃前後)を青で表示
+    const [r,g,b]=hslToRgb(HUE_BLUE, SAT_BLUE, GRAD_LIGHT);
+    return `rgba(${r|0},${g|0},${b|0},.92)`;
+  }
+  const [r,g,b]=tempGradRgb(t);
+  return `rgba(${r|0},${g|0},${b|0},.92)`;
+}
+
+let tempMap={}, staleMap={}, atMap={}, isOnline=true;
+
+// ── 直前値の保持 ──────────────────────────────────────
+// サーバが latest.json を失った直後（再デプロイ・スリープ復帰）や、
+// 名前変更などで新しい温度が来ない間は、前回取得できた温度をそのまま
+// 「未接続（点線）」表示で出し続け、新しい値が来たら置き換える。
+const LAST_GOOD_KEY='bathLastGood', LAST_GOOD_MAX_MS=60*60*1000; // 60分で -- に戻す
+function loadLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    if(s&&s.t&&Date.now()-s.t<LAST_GOOD_MAX_MS){
+      tempMap=Object.assign({}, s.temp||{});
+      atMap=Object.assign({}, s.at||{});
+      for(const k in tempMap) staleMap[k]=true;
+    }
+  }catch(e){}
+}
+function saveLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    const temp=Object.assign({}, s.temp||{}, tempMap);
+    const at  =Object.assign({}, s.at||{},   atMap);
+    localStorage.setItem(LAST_GOOD_KEY, JSON.stringify({t:Date.now(), temp, at}));
+  }catch(e){}
+}
+// 応答（またはローカル保持分）を既存マップへマージする。
+// b.temp が来ていれば更新、来ていなければ直前値を stale のまま維持。
+function mergeTemps(list, idSet){
+  const seen=new Set();
+  for(const b of list){
+    if(!idSet.has(b.id)) continue;
+    seen.add(b.id);
+    if(b.temp!=null){ tempMap[b.id]=b.temp; staleMap[b.id]=!!b.stale; if(b.at) atMap[b.id]=b.at; }
+    else if(tempMap[b.id]!=null){ staleMap[b.id]=true; }
+    else { delete tempMap[b.id]; staleMap[b.id]=true; atMap[b.id]=b.at; }
+  }
+  for(const id of idSet){ if(!seen.has(id) && tempMap[id]!=null) staleMap[id]=true; }
+  for(const id of Object.keys(tempMap)){
+    const t=atMap[id]?Date.parse(atMap[id]):0;
+    if(t && Date.now()-t>LAST_GOOD_MAX_MS){ delete tempMap[id]; staleMap[id]=true; }
+  }
+}
+loadLastGood();
+
+function fmtAt(iso){
+  if(!iso) return '時刻不明';
+  const d=new Date(iso), p=n=>String(n).padStart(2,'0');
+  const now=new Date();
+  const sameDay=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  return sameDay?`${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// ── 露天風呂レンダリング ──
+function render(){
+  const wrap=document.getElementById('wrap');
+  const img=document.getElementById('photo');
+  const pinsEl=document.getElementById('pins');
+  const iw=img.naturalWidth||1368, ih=img.naturalHeight||796;
+  const bw=wrap.clientWidth, bh=wrap.clientHeight;
+  const scale=Math.max(bw/iw, bh/ih);
+  const dw=iw*scale, dh=ih*scale;
+  const ox=(bw-dw)/2, oy=(bh-dh)/2;
+  if(EDIT_MODE){window._eox=ox;window._eoy=oy;window._edw=dw;window._edh=dh;}
+
+  const p=dw/100;
+  const r=document.documentElement;
+  r.style.setProperty('--pin-nm',   (p*2.05*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-tp',   (p*3.30*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-nm',(p*1.80*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-ban-w',(p*14.5*PIN_SCALE).toFixed(1)+'px');   // 使用禁止ピンの箱（通常ピン相当・固定）
+  r.style.setProperty('--pin-ban-h',(p*8*PIN_SCALE).toFixed(1)+'px');
+  const GAP=Math.round(p*4.8);   // ドットと箱の隙間（pu/pv 未指定時）
+
+  // 箱は常に「中心」を基準に配置。ラインはドット→箱の中心。
+  // pu/pv 未指定のピンは、まず仮位置で描画し、あとで箱の高さを測って中心を確定する。
+  let html='';
+  for(const s of SPOTS){
+    const px=ox+s.u*dw, py=oy+s.v*dh;
+    const hasBox=(s.pu!=null&&s.pv!=null);
+    const bx=hasBox?ox+s.pu*dw:px;
+    const by=hasBox?oy+s.pv*dh:py-GAP;   // 仮（未指定時はあとで再計算）
+    const dist=Math.hypot(bx-px,by-py);
+    const ang=Math.atan2(by-py,bx-px)*180/Math.PI;
+    const sc=s.scale||1;
+    const scStyle=sc!==1?` scale(${sc})`:'';
+    const t=tempMap[s.id];
+    const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
+    const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
+    const isStale=!isOnline||staleMap[s.id];
+    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
+    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}">
+      ${s.banned
+        ? `<div class="ban-wrap">${s.hideName?'':`<div class="nm">${s.name}</div>`}<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span></div>`
+        : `${s.hideName?'':`<div class="nm">${s.name}</div>`}<div class="tp">${label}</div>${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}`}
+    </div>`;
+  }
+  pinsEl.innerHTML=html;
+
+  // pu/pv 未指定のピン: 箱の高さを測り、箱の中心を「ドットから GAP + 箱の半分」上に置く
+  const kids=pinsEl.children;
+  SPOTS.forEach((s,k)=>{
+    const lineEl=kids[k*3+1], pinEl=kids[k*3+2];
+    // 使用禁止ピン: 箱は通常ピンと同じ固定サイズ。文字ブロック全体を等倍で縮小して収める
+    if(s.banned){
+      const w=pinEl.querySelector('.ban-wrap');
+      if(w){
+        w.style.transform='';
+        const sc2=Math.min((pinEl.clientWidth-8)/w.scrollWidth, (pinEl.clientHeight-8)/w.scrollHeight, 1);
+        if(sc2<1) w.style.transform='scale('+sc2.toFixed(3)+')';
+      }
+    }
+    if(s.pu!=null&&s.pv!=null) return;
+    const px=ox+s.u*dw, py=oy+s.v*dh;
+    const by=Math.round(py - GAP - pinEl.offsetHeight/2);
+    pinEl.style.top=by+'px';
+    lineEl.style.width=(py-by)+'px';
+    lineEl.style.transform='rotate(-90deg)';   // 真上
+  });
+
+  // 追加アイコン: CUSTOM_ICONS から img を生成・更新・不要分を除去
+  const _wrapEl=document.getElementById('wrap');
+  for(const ic of CUSTOM_ICONS){
+    let el=document.getElementById(ic.key);
+    if(!el){ el=document.createElement('img'); el.id=ic.key; el.className='custom-icon'; el.alt=''; _wrapEl.appendChild(el); }
+    if(el.getAttribute('src')!==ic.src) el.src=ic.src;
+    el.style.width='calc('+(10*(ic.scale||1)).toFixed(2)+'vw)';
+  }
+  _wrapEl.querySelectorAll('img.custom-icon').forEach(el=>{ if(!CUSTOM_ICONS.some(ic=>ic.key===el.id)) el.remove(); });
+
+  for(const f of FLOATS){
+    const el=document.getElementById(f.key);
+    if(el){ el.style.left=(ox+f.u*dw)+'px'; el.style.top=(oy+f.v*dh)+'px'; }
+  }
+
+  if(EDIT_MODE && window.addEditHandles && !window._dragSpot) window.addEditHandles();
+}
+
+function setConn(online, anyStale){
+  const el=document.getElementById('conn');
+  if(!online){ el.className='connbadge ng'; el.textContent='🔴 未接続（表示は最終値）'; }
+  else if(anyStale){ el.className='connbadge warn'; el.textContent='🟡 一部未取得'; }
+  else{ el.className='connbadge ok'; el.textContent='🟢 接続中'; }
+}
+
+let lastUpdated=null, lastOnline=null, lastAttempt=null;
+async function load(){
+  try{
+    const res=await fetch('/api/baths');
+    const data=await res.json();
+    const online=data.online!==false;
+    if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
+    lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
+    const shownIds=new Set(SPOTS.map(s=>s.id));
+    mergeTemps(data.baths, shownIds);
+    saveLastGood();
+    const anyStale=!isOnline || SPOTS.some(s=>staleMap[s.id]);
+    const amb=data.gateway;
+    if(amb&&amb.temp!=null){
+      document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
+    }
+    setConn(isOnline, anyStale);
+    if(data.last_updated){
+      const d=new Date(data.last_updated),p=n=>String(n).padStart(2,'0');
+      const label=online?'最終更新':'最終取得';
+      document.getElementById('upd').textContent=`${label} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    render();
+  }catch(e){
+    isOnline=false; lastOnline=false; setConn(false); render();
+  }
+}
+
+// ── 凡例グラデーションバー（実際の色分けと同じ関数で描画。閾値より少し下から表示）──
+(function(){
+  const LEGEND_MIN = TEMP_THRESHOLD - 4;
+  const stops=[];
+  for(let t=LEGEND_MIN;t<=TEMP_MAX;t+=1){
+    const [r,g,b]=tempGradRgb(t);
+    stops.push(`rgb(${r|0},${g|0},${b|0}) ${(t-LEGEND_MIN)/(TEMP_MAX-LEGEND_MIN)*100}%`);
+  }
+  document.getElementById('legend-gradbar').style.background=`linear-gradient(0deg, ${stops.join(',')})`;
+})();
+
+document.getElementById('photo').onload=render;
+window.addEventListener('resize',render);
+render();
+load();
+setInterval(load,10000);
+
+// ── 右下の時計 ──
+function updateClock(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  document.getElementById('corner-time').textContent=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+updateClock();
+setInterval(updateClock,1000);
+
+// ── 編集モード ──
+if(EDIT_MODE){
+  window._dragSpot=null;
+
+  const ep=document.createElement('div');
+  ep.style.cssText='position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,.9);color:#fff;padding:12px 16px;border-radius:10px;font-size:12px;font-family:monospace;min-width:440px;border:2px solid #FFD700;';
+  ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 🟡金=湯 / 🔵水色=文字・表 をドラッグ<button id="ep-hide" style="float:right;padding:2px 8px;background:#444;color:#fff;border:1px solid #888;border-radius:5px;cursor:pointer;font-size:11px">隠す</button></div><div id="ep-body"><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button></div>';
+  document.body.appendChild(ep);
+  document.getElementById('ep-hide').onclick=()=>{
+    const b=document.getElementById('ep-body'), btn=document.getElementById('ep-hide');
+    const hidden=b.style.display==='none';
+    b.style.display=hidden?'block':'none';
+    btn.textContent=hidden?'隠す':'表示';
+    ep.style.minWidth=hidden?'440px':'0';
+  };
+
+  function epUpdate(){
+    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''} },`);
+    const flines=FLOATS.map(f=>`  { key:"${f.key}", name:"${f.name}", u:${f.u.toFixed(3)}, v:${f.v.toFixed(3)} },`);
+    document.getElementById('ep-out').textContent=
+      'const SPOTS = [\n'+lines.join('\n')+'\n];\n\n'+
+      'const FLOATS = [\n'+flines.join('\n')+'\n];';
+  }
+  document.getElementById('ep-copy').onclick=()=>{
+    navigator.clipboard.writeText(document.getElementById('ep-out').textContent).then(()=>{
+      const b=document.getElementById('ep-copy');
+      b.textContent='✓ コピー済み'; setTimeout(()=>b.textContent='コピー',1500);
+    });
+  };
+  window._epUpdate=epUpdate;
+
+  window.addEditHandles=function(){
+    const wrap=document.getElementById('wrap');
+    const ox=window._eox||0, oy=window._eoy||0, dw=window._edw||1, dh=window._edh||1;
+    let cont=document.getElementById('ehandles');
+    if(!cont){
+      cont=document.createElement('div');
+      cont.id='ehandles';
+      cont.style.cssText='position:absolute;inset:0;z-index:600;';
+      wrap.appendChild(cont);
+    }
+    cont.innerHTML='';
+    const mk=(obj,kind,color)=>{
+      const px=ox+obj.u*dw, py=oy+obj.v*dh;
+      const h=document.createElement('div');
+      h.className='ehandle';
+      h.dataset.kind=kind;
+      h.dataset.key=(kind==='spot'?obj.id:obj.key);
+      h.style.cssText=`position:absolute;left:${px}px;top:${py}px;width:28px;height:28px;border-radius:50%;background:${color};border:3px solid #fff;transform:translate(-50%,-50%);cursor:grab;box-shadow:0 0 12px rgba(0,0,0,.8);`;
+      h.title=obj.name;
+      cont.appendChild(h);
+    };
+    for(const s of SPOTS) mk(s,'spot','rgba(255,215,0,.9)');
+    for(const f of FLOATS) mk(f,'float','rgba(0,200,255,.9)');
+  };
+
+  const wrap=document.getElementById('wrap');
+  wrap.addEventListener('mousedown',e=>{
+    const h=e.target.closest('.ehandle');
+    if(!h) return;
+    e.preventDefault();
+    window._dragSpot = h.dataset.kind==='spot'
+      ? SPOTS.find(s=>String(s.id)===h.dataset.key)
+      : FLOATS.find(f=>f.key===h.dataset.key);
+    h.style.cursor='grabbing'; h.style.opacity='.55';
+  });
+  window.addEventListener('mousemove',e=>{
+    const s=window._dragSpot;
+    if(!s) return;
+    const rect=wrap.getBoundingClientRect();
+    const ox=window._eox||0,oy=window._eoy||0,dw=window._edw||1,dh=window._edh||1;
+    s.u=Math.max(0,Math.min(1,(e.clientX-rect.left-ox)/dw));
+    s.v=Math.max(0,Math.min(1,(e.clientY-rect.top-oy)/dh));
+    window.addEditHandles();
+    epUpdate();
+    render();
+  });
+  window.addEventListener('mouseup',()=>{ window._dragSpot=null; });
+
+  epUpdate();
+  render();
+  window.addEditHandles();
+}
+</script>
+</body>
+</html>
