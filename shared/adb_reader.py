@@ -85,6 +85,18 @@ def fetch_remote_baths(cfg: dict) -> list | None:
     return None
 
 
+def remote_gateway_cfg(cfg: dict) -> dict:
+    """CMS が bath-config.json に指定した「外気温（ゲートウェイ）」設定。
+    {"sensor": Inkbird名, "device": 機器名, "active": bool}。未指定なら {}。"""
+    if REMOTE_BATHS_CACHE.exists():
+        try:
+            gw = json.loads(REMOTE_BATHS_CACHE.read_text(encoding="utf-8")).get("gateway")
+            return gw if isinstance(gw, dict) else {}
+        except Exception:
+            pass
+    return {}
+
+
 # ── ADB コマンド実行 ──────────────────────────────────
 def adb(cfg: dict, *args, timeout=20) -> tuple[str, int]:
     exe  = cfg["adb"].get("exe", "adb")
@@ -599,6 +611,15 @@ def run_once(cfg: dict, retries: int = 4) -> bool:
         log.info("【通信失敗】データ取得0件 → 前回の温度を表示し続けます（未接続マーク）")
         log.info("=" * 50)
         return False
+
+    # CMS で「外気温（ゲートウェイ）」センサーを指定していれば、そのセンサー値を外気温に使う
+    gwc = remote_gateway_cfg(cfg)
+    if gwc.get("sensor") and gwc.get("active", True):
+        _norm = {str(k).strip(): v for k, v in sensor_temps.items()}
+        hit = _norm.get(str(gwc["sensor"]).strip())
+        if hit and hit.get("temp") is not None:
+            gateway = {"temp": hit["temp"], "humidity": hit.get("humidity")}
+            log.info(f"  外気温をCMS指定センサー「{gwc['sensor']}」から取得: {hit['temp']}°C")
 
     matched = update_temps(cfg, sensor_temps, gateway)
     saved = load_temps()  # 保持された前回値を表示するため読み戻す
