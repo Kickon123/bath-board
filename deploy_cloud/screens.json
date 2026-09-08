@@ -4,5 +4,10 @@
     "name": "フロント/湯畑",
     "base": "rotenburo",
     "notelop": true
+  },
+  {
+    "slug": "daiyokujyou",
+    "name": "大浴場",
+    "base": "rotenburo"
   }
 ]
