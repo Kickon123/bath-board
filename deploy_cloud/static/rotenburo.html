@@ -23,6 +23,9 @@
     from{transform:translateX(0);}
     to{transform:translateX(-50%);}
   }
+  /* 上部見出しを「タイトル（静止）」表示にした場合 */
+  #header-title{display:none;flex:1;color:#FFD700;font-weight:bold;letter-spacing:.06em;
+    font-size:3.8vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 24px;}
 
   /* ── 時計 / 現在地・気温（位置・大きさともCMSから調整可能） ── */
   #corner-time, #corner-location{
@@ -97,6 +100,7 @@
     <span class="ticker-item">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator</span>
     <span class="ticker-item">湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator</span>
   </div></div>
+  <h1 id="header-title"></h1>
 </div>
 
 <div id="wrap">
@@ -149,6 +153,33 @@ const CORNER_SCALE = 0.7;
 
 // ── 現在地・時刻のリアルタイム表示（CMSから 表示/非表示）──
 const SHOW_CORNER = true;
+
+// ── 上部の見出し（CMSから：タイトル/テロップ/なし・文言・大きさ・寄せ）──
+const HEADER_MODE  = "ticker";      // "title" | "ticker" | "none"
+const HEADER_TEXT  = "湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator";
+const HEADER_SCALE = 1;
+const HEADER_ALIGN = "center";       // "left" | "center" | "right"
+(function(){
+  const bar = document.getElementById('topbar');
+  if(!bar) return;
+  if(HEADER_MODE === 'none'){ bar.style.display = 'none'; return; }
+  const tw = document.getElementById('ticker-wrap');
+  const ht = document.getElementById('header-title');
+  if(HEADER_MODE === 'title'){
+    if(tw) tw.style.display = 'none';
+    if(ht){
+      ht.style.display = 'block';
+      ht.textContent = HEADER_TEXT;
+      ht.style.fontSize = (3.8 * HEADER_SCALE) + 'vw';
+      ht.style.textAlign = HEADER_ALIGN;
+    }
+  }else{ // ticker
+    document.querySelectorAll('.ticker-item').forEach(s=>{
+      s.textContent = HEADER_TEXT;
+      s.style.fontSize = (3.8 * HEADER_SCALE) + 'vw';
+    });
+  }
+})();
 
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.7;

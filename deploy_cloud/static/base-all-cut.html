@@ -249,6 +249,26 @@ document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
 const SHOW_CORNER = true;
 if(!SHOW_CORNER) document.body.classList.add('hide-corner');
 
+// ── 上部の見出し（CMSから：タイトル/なし・文言・大きさ・寄せ。allcut はテロップ非対応）──
+const HEADER_MODE  = "title";       // "title" | "none"
+const HEADER_TEXT  = "山中温泉　花つばき/ Hanatsubaki";
+const HEADER_SCALE = 1;
+const HEADER_ALIGN = "left";         // "left" | "center" | "right"
+(function(){
+  const bar = document.getElementById('topbar');
+  if(!bar) return;
+  if(HEADER_MODE === 'none'){ bar.style.display = 'none'; return; }
+  const h1 = bar.querySelector('h1');
+  if(h1){
+    h1.textContent = HEADER_TEXT;
+    h1.style.fontSize = (2.3 * HEADER_SCALE) + 'vw';
+  }
+  const l = document.getElementById('topbar-l');
+  if(l) l.style.justifyContent =
+    HEADER_ALIGN === 'center' ? 'center' :
+    HEADER_ALIGN === 'right'  ? 'flex-end' : 'space-between';
+})();
+
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.9;
 document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
