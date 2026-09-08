@@ -4,10 +4,5 @@
     "name": "フロント/湯畑",
     "base": "rotenburo",
     "notelop": true
-  },
-  {
-    "slug": "ttt",
-    "name": "Test",
-    "base": "allcut"
   }
 ]
