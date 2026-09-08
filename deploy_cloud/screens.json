@@ -1,10 +1,5 @@
 [
   {
-    "slug": "test",
-    "name": "テスト",
-    "base": "rotenburo"
-  },
-  {
     "slug": "rotenburo2",
     "name": "フロント",
     "base": "rotenburo",
