@@ -196,6 +196,48 @@ function tempColor(id, t){
 
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
 
+// ── 直前値の保持 ──────────────────────────────────────
+// サーバが latest.json を失った直後（再デプロイ・スリープ復帰）や、
+// 名前変更などで新しい温度が来ない間は、前回取得できた温度をそのまま
+// 「未接続（点線）」表示で出し続け、新しい値が来たら置き換える。
+const LAST_GOOD_KEY='bathLastGood', LAST_GOOD_MAX_MS=60*60*1000; // 60分で -- に戻す
+function loadLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    if(s&&s.t&&Date.now()-s.t<LAST_GOOD_MAX_MS){
+      tempMap=Object.assign({}, s.temp||{});
+      atMap=Object.assign({}, s.at||{});
+      for(const k in tempMap) staleMap[k]=true;
+    }
+  }catch(e){}
+}
+function saveLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    const temp=Object.assign({}, s.temp||{}, tempMap);
+    const at  =Object.assign({}, s.at||{},   atMap);
+    localStorage.setItem(LAST_GOOD_KEY, JSON.stringify({t:Date.now(), temp, at}));
+  }catch(e){}
+}
+// 応答（またはローカル保持分）を既存マップへマージする。
+// b.temp が来ていれば更新、来ていなければ直前値を stale のまま維持。
+function mergeTemps(list, idSet){
+  const seen=new Set();
+  for(const b of list){
+    if(!idSet.has(b.id)) continue;
+    seen.add(b.id);
+    if(b.temp!=null){ tempMap[b.id]=b.temp; staleMap[b.id]=!!b.stale; if(b.at) atMap[b.id]=b.at; }
+    else if(tempMap[b.id]!=null){ staleMap[b.id]=true; }
+    else { delete tempMap[b.id]; staleMap[b.id]=true; atMap[b.id]=b.at; }
+  }
+  for(const id of idSet){ if(!seen.has(id) && tempMap[id]!=null) staleMap[id]=true; }
+  for(const id of Object.keys(tempMap)){
+    const t=atMap[id]?Date.parse(atMap[id]):0;
+    if(t && Date.now()-t>LAST_GOOD_MAX_MS){ delete tempMap[id]; staleMap[id]=true; }
+  }
+}
+loadLastGood();
+
 function fmtAt(iso){
   if(!iso) return '時刻不明';
   const d=new Date(iso), p=n=>String(n).padStart(2,'0');
@@ -308,12 +350,10 @@ async function load(){
     const online=data.online!==false;
     if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
-    tempMap={}; staleMap={}; atMap={};
     const shownIds=new Set(SPOTS.map(s=>s.id));
-    for(const b of data.baths){
-      if(shownIds.has(b.id)){ tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at; }
-    }
-    const anyStale=data.baths.filter(b=>shownIds.has(b.id)).some(b=>b.stale);
+    mergeTemps(data.baths, shownIds);
+    saveLastGood();
+    const anyStale=!isOnline || SPOTS.some(s=>staleMap[s.id]);
     const amb=data.gateway;
     if(amb&&amb.temp!=null){
       document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';

@@ -311,6 +311,49 @@ const DAIYU_IDS = new Set([20, 21]);
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
 let daiTempMap={}, daiStaleMap={}, daiAtMap={};
 
+// ── 直前値の保持 ──────────────────────────────────────
+// サーバが latest.json を失った直後（再デプロイ・スリープ復帰）や、
+// 名前変更などで新しい温度が来ない間は、前回取得できた温度をそのまま
+// 「未接続（点線）」表示で出し続け、新しい値が来たら置き換える。
+const LAST_GOOD_KEY='bathLastGood', LAST_GOOD_MAX_MS=60*60*1000; // 60分で -- に戻す
+function loadLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    if(s&&s.t&&Date.now()-s.t<LAST_GOOD_MAX_MS){
+      const temp=s.temp||{}, at=s.at||{};
+      for(const k in temp){
+        if(DAIYU_IDS.has(Number(k))){ daiTempMap[k]=temp[k]; daiAtMap[k]=at[k]; daiStaleMap[k]=true; }
+        else { tempMap[k]=temp[k]; atMap[k]=at[k]; staleMap[k]=true; }
+      }
+    }
+  }catch(e){}
+}
+function saveLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    const temp=Object.assign({}, s.temp||{}, tempMap, daiTempMap);
+    const at  =Object.assign({}, s.at||{},   atMap,   daiAtMap);
+    localStorage.setItem(LAST_GOOD_KEY, JSON.stringify({t:Date.now(), temp, at}));
+  }catch(e){}
+}
+// b.temp が来ていれば更新、来ていなければ直前値を stale のまま維持する。
+function mergeTemps(list, idSet, tMap, sMap, aMap){
+  const seen=new Set();
+  for(const b of list){
+    if(!idSet.has(b.id)) continue;
+    seen.add(b.id);
+    if(b.temp!=null){ tMap[b.id]=b.temp; sMap[b.id]=!!b.stale; if(b.at) aMap[b.id]=b.at; }
+    else if(tMap[b.id]!=null){ sMap[b.id]=true; }
+    else { delete tMap[b.id]; sMap[b.id]=true; aMap[b.id]=b.at; }
+  }
+  for(const id of idSet){ if(!seen.has(id) && tMap[id]!=null) sMap[id]=true; }
+  for(const id of Object.keys(tMap)){
+    const t=aMap[id]?Date.parse(aMap[id]):0;
+    if(t && Date.now()-t>LAST_GOOD_MAX_MS){ delete tMap[id]; sMap[id]=true; }
+  }
+}
+loadLastGood();
+
 function fmtAt(iso){
   if(!iso) return '時刻不明';
   const d=new Date(iso), p=n=>String(n).padStart(2,'0');
@@ -456,17 +499,12 @@ async function load(){
     const online=data.online!==false;
     if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
-    tempMap={}; staleMap={}; atMap={};
-    daiTempMap={}; daiStaleMap={}; daiAtMap={};
-    for(const b of data.baths){
-      if(DAIYU_IDS.has(b.id)){
-        daiTempMap[b.id]=b.temp; daiStaleMap[b.id]=b.stale; daiAtMap[b.id]=b.at;
-      } else {
-        tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at;
-      }
-    }
-    const anyStale=data.baths.filter(b=>!DAIYU_IDS.has(b.id)).some(b=>b.stale);
-    const daiAnyStale=data.baths.filter(b=>DAIYU_IDS.has(b.id)).some(b=>b.stale);
+    const shownIds=new Set(SPOTS.map(s=>s.id));
+    mergeTemps(data.baths, shownIds, tempMap, staleMap, atMap);
+    mergeTemps(data.baths, DAIYU_IDS, daiTempMap, daiStaleMap, daiAtMap);
+    saveLastGood();
+    const anyStale=!isOnline || SPOTS.some(s=>staleMap[s.id]);
+    const daiAnyStale=!isOnline || Array.from(DAIYU_IDS).some(id=>daiStaleMap[id]);
     const amb=data.gateway;
     if(amb&&amb.temp!=null){
       document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
