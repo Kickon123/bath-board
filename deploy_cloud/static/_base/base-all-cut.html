@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>湯畑 露天風呂 温度マップ</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0d140a;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
+    height:100vh;display:flex;flex-direction:column;}
+
+  /* ── トップバー ── */
+  #topbar{display:flex;align-items:stretch;background:rgba(10,18,8,.8);flex-shrink:0;}
+  #topbar-l{flex:var(--wrap-flex,8);display:flex;align-items:center;justify-content:space-between;
+    padding:5px 12px;}
+  #topbar-r{flex:var(--daiyokujo-flex,2);display:flex;align-items:center;justify-content:space-between;padding:5px 36px 5px 12px;}
+  body::after{content:"";position:fixed;top:0;bottom:0;
+    left:calc(var(--daiyokujo-flex,2) / (var(--daiyokujo-flex,2) + var(--wrap-flex,8)) * 100%);
+    width:1px;background:rgba(255,200,100,.18);pointer-events:none;z-index:100;}
+  #topbar-r h2{color:#f0e6cf;font-size:2.3vw;letter-spacing:.1em;}
+  #topbar-r h2 small{display:block;font-size:1.6vw;color:#b8a884;}
+  #topbar h1{color:#f0e6cf;font-size:2.3vw;letter-spacing:.1em;}
+  #topbar h1 small{display:block;font-size:1.6vw;color:#b8a884;}
+  #info{display:flex;gap:6px;align-items:center;font-size:1.5vw;}
+  #info .t{color:#fff;font-weight:bold;}
+  #info .upd{color:#9aaa8a;font-size:1.0vw;}
+  #info span:first-child{color:#f0e6cf;font-weight:bold;}
+  #upd, .connbadge{display:none;}
+  body.hide-corner #info, body.hide-corner #clock{display:none!important;}
+  .connbadge{font-size:0.85vw;font-weight:bold;padding:2px 6px;border-radius:10px;}
+  .connbadge.ok{color:#8fe39a;background:rgba(40,120,60,.35);}
+  .connbadge.warn{color:#ffd24a;background:rgba(150,110,20,.45);}
+  .connbadge.ng{color:#ff8f7a;background:rgba(150,40,30,.5);
+    animation:blink 1.4s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+
+  /* ── メインエリア ── */
+  #main-row{display:flex;flex:1;overflow:hidden;}
+
+  /* ── 右: 露天風呂 ── */
+  #wrap{position:relative;flex:var(--wrap-flex,8);overflow:hidden;background:#2c380b;}
+  #wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+  #wrap img#datsuijo{
+    position:absolute;transform:translate(-50%,-50%);
+    width:calc(12vw * var(--datsuijo-scale,1));height:auto;
+    max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.75));
+    pointer-events:none;z-index:3;}
+  .pin{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;
+    background:var(--lc,rgba(10,16,8,.85));border:2px solid rgba(255,255,255,.6);
+    border-radius:12px;padding:6px 12px;text-align:center;white-space:nowrap;
+    box-shadow:0 3px 12px rgba(0,0,0,.5);pointer-events:none;z-index:4;}
+  /* 使用禁止のピンは箱を大きくせず、文字を縮小して収める */
+  .pin.banned{width:var(--pin-ban-w,150px);height:var(--pin-ban-h,78px);
+    overflow:hidden;display:flex;align-items:center;justify-content:center;padding:4px 6px;}
+  .pin .ban-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;
+    transform-origin:center center;white-space:nowrap;}
+  .pin .nm{font-size:var(--pin-nm,1.6vw);color:#fff;font-weight:bold;}
+  .pin .tp{font-size:var(--pin-tp,2.6vw);font-weight:800;color:#fff;}
+  .pin.sm .nm{font-size:var(--pin-sm-nm,1.4vw);}
+  .pin.sm .tp{font-size:var(--pin-sm-tp,2.2vw);}
+  .pin.lg .nm{font-size:var(--pin-lg-nm,1.8vw);}
+  .pin.lg .tp{font-size:var(--pin-lg-tp,3.0vw);}
+  .line{position:absolute;height:3px;transform-origin:0 50%;
+    background:rgba(255,255,255,0.55);pointer-events:none;z-index:3;}
+  .pin.stale{border-style:dashed;opacity:.9;}
+  .pin .old{font-size:1.0vw;color:#ffd24a;font-weight:bold;display:block;margin-top:2px;}
+  .pin .ban{display:flex;flex-direction:column;align-items:center;margin:0;color:#fff;font-weight:900;
+    font-size:var(--pin-tp,2.6vw);line-height:1.12;letter-spacing:.03em;}
+  .pin.sm .ban{font-size:var(--pin-sm-tp,2.2vw);}
+  .pin.lg .ban{font-size:calc(var(--pin-lg-tp,3.0vw) * 0.6);}
+  .pin .ban-en{display:block;font-size:.72em;font-weight:800;letter-spacing:.08em;margin-top:2px;}
+  .dot{position:absolute;transform:translate(-50%,-50%);
+    width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.7);}
+  #wrap img#yugata{position:absolute;transform:translate(-50%,-50%);
+    width:calc(20vw * var(--yugata-scale,1));height:auto;max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
+    pointer-events:none;z-index:3;}
+  #wrap img.custom-icon{position:absolute;transform:translate(-50%,-50%);
+    height:auto;max-width:none;object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
+    pointer-events:none;z-index:3;}
+  #legend{position:absolute;transform:translate(-50%,-50%);
+    width:max-content;
+    background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
+    border-radius:14px;font-size:0.9vw;}
+  #legend .r{display:flex;gap:6px;align-items:center;margin:2px 0;white-space:nowrap;}
+  #legend .d{width:10px;height:10px;border-radius:3px;}
+  #legend .legend-row{display:flex;align-items:stretch;gap:14px;}
+  #legend .gradbar{width:2.8vw;height:18vh;border-radius:10px;flex-shrink:0;}
+  #legend .gradlabels{display:flex;flex-direction:column;justify-content:space-between;
+    font-size:1.4vw;font-weight:bold;color:#f0e6cf;}
+
+  /* ── 左: 大浴場 ── */
+  #daiyokujo{
+    flex:var(--daiyokujo-flex,2);
+    display:flex;
+    flex-direction:column;
+    background:#080f06;
+  }
+  #daiyu-cards{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:16px 14px;
+  }
+  .bath-card{
+    flex:1;
+    background:var(--bc, rgba(45,72,28,.92));
+    border:2px solid rgba(255,255,255,.6);
+    border-radius:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    position:relative;
+    overflow:hidden;
+  }
+  .bath-card.stale{border-style:dashed;opacity:.85;}
+  .card-flag{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;
+    background:#3a90d8;display:none;}
+  .bath-card.flagged .card-flag{display:block;}
+  .bath-card .card-label{
+    font-size:calc(2.0vw * var(--card-scale,1));color:#b8a884;font-weight:bold;letter-spacing:.12em;
+  }
+  .bath-card .card-label-en{
+    display:block;font-size:calc(2.0vw * var(--card-scale,1));color:#8a8168;font-weight:bold;letter-spacing:.1em;
+  }
+  .bath-card .card-name{
+    font-size:calc(2.2vw * var(--card-scale,1));color:#f0e6cf;font-weight:900;letter-spacing:.08em;
+  }
+  .bath-card .card-temp{
+    font-size:calc(3.5vw * var(--card-scale,1));font-weight:800;color:#fff;
+    line-height:1;letter-spacing:.04em;
+  }
+  .bath-card .card-upd{
+    font-size:calc(1.3vw * var(--card-scale,1));color:#ffd24a;font-weight:bold;
+  }
+  #clock{
+    position:absolute;right:20px;bottom:20px;z-index:50;
+    padding:8px 16px;
+    background:rgba(10,18,8,.8);
+    color:#f0e6cf;font-weight:bold;letter-spacing:.06em;
+    font-variant-numeric:tabular-nums;text-align:right;
+    border-radius:10px;
+  }
+  #clock .date{font-size:1.6vw;display:block;color:#b8a884;margin-bottom:2px;}
+  #clock .time{font-size:2.6vw;display:block;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="topbar-r">
+    <h2>♨ 大浴場</h2>
+    <span id="conn2" class="connbadge ok">🟢 接続中</span>
+  </div>
+  <div id="topbar-l">
+    <h1>山中温泉　花つばき/ Hanatsubaki</h1>
+    <div id="info">
+      <span>📍石川県山中</span>
+      <span class="t" id="at">--.-℃</span>
+      <span class="upd" id="upd"></span>
+      <span id="conn" class="connbadge ok">🟢 接続中</span>
+    </div>
+  </div>
+</div>
+
+<div id="main-row">
+
+  <!-- ── 左: 大浴場 ── -->
+  <div id="daiyokujo">
+    <div id="daiyu-cards">
+      <div class="bath-card" id="card-20">
+        <div class="card-flag"></div>
+        <div class="card-label">男湯<span class="card-label-en">Male</span></div>
+        <div class="card-name">大浴場</div>
+        <div class="card-temp" id="temp-20">--.-℃</div>
+        <div class="card-upd" id="upd-20"></div>
+      </div>
+      <div class="bath-card" id="card-21">
+        <div class="card-flag"></div>
+        <div class="card-label">女湯<span class="card-label-en">Female</span></div>
+        <div class="card-name">大浴場</div>
+        <div class="card-temp" id="temp-21">--.-℃</div>
+        <div class="card-upd" id="upd-21"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 右: 露天風呂 ── -->
+  <div id="wrap">
+    <img src="/static/cut.png" id="photo" alt="湯畑"/>
+    <div id="pins"></div>
+    <img src="/static/yugata.png" id="yugata" alt="湯畑"/>
+    <div id="legend">
+      <div class="legend-row">
+        <div id="legend-gradbar" class="gradbar"></div>
+        <div class="gradlabels"><span>40℃+</span><span>28℃-</span></div>
+      </div>
+    </div>
+    <img src="/static/datsuijo.png" id="datsuijo" alt="脱衣所"/>
+    <div id="clock">--:--:--</div>
+  </div>
+
+</div>
+
+<script>
+const EDIT_MODE=new URLSearchParams(location.search).has('edit');
+// ── ?nodaiyu、または /yubatake 系URLでは大浴場パネルを非表示にし、
+//    露天風呂を全幅表示する（スライドショー埋め込み・/yubatake単独ページ用）──
+const IS_YUBATAKE_PATH=['/yubatake','/board','/bath/yubatake'].includes(location.pathname);
+if(new URLSearchParams(location.search).has('nodaiyu') || IS_YUBATAKE_PATH){
+  document.getElementById('daiyokujo').style.display='none';
+  document.getElementById('wrap').style.flex='1';
+}
+// /yubatake系URLでは、対応するトップバー右側（♨大浴場ラベル）・区切り線も不要なので隠す
+if(IS_YUBATAKE_PATH){
+  document.getElementById('topbar-r').style.display='none';
+  document.getElementById('topbar-l').style.flex='1';
+  const style=document.createElement('style');
+  style.textContent='body::after{display:none;}';
+  document.head.appendChild(style);
+}
+// ── 露天風呂スポット定義 ──
+const SPOTS = [
+  { id:1, name:"高温の湯", u:0.208, v:0.511, pu:0.172, pv:0.724 },
+  { id:2, name:"中温の湯", u:0.291, v:0.461, pu:0.272, pv:0.280 },
+  { id:3, name:"低温の湯", u:0.402, v:0.441, pu:0.448, pv:0.308 },
+  { id:6, name:"立湯", u:0.607, v:0.441, lg:true },
+  { id:5, name:"座湯", u:0.577, v:0.630, pu:0.479, pv:0.816, lg:true },
+];
+
+// ── 移動可能な表示要素（湯畑文字・温度範囲の表・男女脱衣所アイコン）──
+const FLOATS = [
+  { key:"yugata", name:"湯畑文字", u:0.206, v:0.100 },
+  { key:"legend", name:"温度範囲", u:0.903, v:0.256 },
+  { key:"datsuijo", name:"脱衣所アイコン", u:0.849, v:0.591 },
+];
+
+// ── ピン・大浴場カードの大きさ（CMSから調整）──
+const PIN_SCALE = 0.93;
+const CARD_SCALE = 1;
+document.documentElement.style.setProperty('--card-scale', CARD_SCALE);
+
+// ── 現在地・時刻のリアルタイム表示（CMSから 表示/非表示）──
+const SHOW_CORNER = true;
+if(!SHOW_CORNER) document.body.classList.add('hide-corner');
+
+// ── 上部の見出し（CMSから：タイトル/なし・文言・大きさ・寄せ。allcut はテロップ非対応）──
+const HEADER_MODE  = "title";       // "title" | "none"
+const HEADER_TEXT  = "山中温泉　花つばき/ Hanatsubaki";
+const HEADER_SCALE = 1;
+const HEADER_ALIGN = "left";         // "left" | "center" | "right"
+(function(){
+  const bar = document.getElementById('topbar');
+  if(!bar) return;
+  if(HEADER_MODE === 'none'){ bar.style.display = 'none'; return; }
+  const h1 = bar.querySelector('h1');
+  if(h1){
+    h1.textContent = HEADER_TEXT;
+    h1.style.fontSize = (2.3 * HEADER_SCALE) + 'vw';
+  }
+  const l = document.getElementById('topbar-l');
+  if(l) l.style.justifyContent =
+    HEADER_ALIGN === 'center' ? 'center' :
+    HEADER_ALIGN === 'right'  ? 'flex-end' : 'space-between';
+})();
+
+// ── 脱衣所アイコンの大きさ（CMSから調整）──
+const DATSUIJO_SCALE = 0.9;
+document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
+
+// ── 湯畑アイコンの大きさ（CMSから調整）──
+const YUGATA_SCALE = 1;
+document.documentElement.style.setProperty('--yugata-scale', YUGATA_SCALE);
+
+// ── 追加アイコン（CMSで複数追加）── [{key,src,scale}]
+const CUSTOM_ICONS = [
+];
+
+// ── 使用禁止表示の文言（CMSから編集）──
+const BAN_TEXT_JA = "メンテナンス中";
+const BAN_TEXT_EN = "Closed";
+
+// ── 大浴場と露天風呂(湯畑)パネルの比率（CMSから調整）──
+const DAIYOKUJO_FLEX = 2;
+const WRAP_FLEX = 8;
+document.documentElement.style.setProperty('--daiyokujo-flex', DAIYOKUJO_FLEX);
+document.documentElement.style.setProperty('--wrap-flex', WRAP_FLEX);
+
+// ── 大浴場スポット定義 ──
+const DAIYU_SPOTS = [
+  { id:20, label:"男湯" },
+  { id:21, label:"女湯" },
+];
+
+// 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
+// 紫・緑は一切使わない「温度計」らしい2段構成。
+// (hue0を越えてマイナスにするとマゼンタ側に入りピンクがかるため0で止める)
+const TEMP_THRESHOLD = 28, TEMP_MAX = 40;
+const HUE_BLUE = 210, SAT_BLUE = 85;
+const HUE_WARM_START = 55, HUE_WARM_END = 0, SAT_WARM = 92;
+const GRAD_LIGHT = 50;
+function hslToRgb(h,s,l){
+  s/=100; l/=100;
+  const k=n=>(n+h/30)%12;
+  const a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [255*f(0),255*f(8),255*f(4)];
+}
+function tempGradRgb(t){
+  if(t<=TEMP_THRESHOLD) return hslToRgb(HUE_BLUE, SAT_BLUE, GRAD_LIGHT);
+  const clamped=Math.min(TEMP_MAX, t);
+  const f=(clamped-TEMP_THRESHOLD)/(TEMP_MAX-TEMP_THRESHOLD);
+  const hue=HUE_WARM_START+(HUE_WARM_END-HUE_WARM_START)*f;
+  return hslToRgb(hue, SAT_WARM, GRAD_LIGHT);
+}
+function tempColor(id, t){
+  if(id===6) return 'rgba(58,144,216,.9)'; // 立湯は常に青固定
+  if(t==null) return 'rgba(90,100,86,.85)';
+  if(id===5 && t<=29){ // 座湯は閑散期(未加温=29℃前後)を青で表示
+    const [r,g,b]=hslToRgb(HUE_BLUE, SAT_BLUE, GRAD_LIGHT);
+    return `rgba(${r|0},${g|0},${b|0},.92)`;
+  }
+  const [r,g,b]=tempGradRgb(t);
+  return `rgba(${r|0},${g|0},${b|0},.92)`;
+}
+function tempTextColor(t){
+  return '#fff';
+}
+
+const DAIYU_IDS = new Set([20, 21]);
+let tempMap={}, staleMap={}, atMap={}, isOnline=true;
+let daiTempMap={}, daiStaleMap={}, daiAtMap={};
+
+// ── 直前値の保持 ──────────────────────────────────────
+// サーバが latest.json を失った直後（再デプロイ・スリープ復帰）や、
+// 名前変更などで新しい温度が来ない間は、前回取得できた温度をそのまま
+// 「未接続（点線）」表示で出し続け、新しい値が来たら置き換える。
+const LAST_GOOD_KEY='bathLastGood', LAST_GOOD_MAX_MS=60*60*1000; // 60分で -- に戻す
+function loadLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    if(s&&s.t&&Date.now()-s.t<LAST_GOOD_MAX_MS){
+      const temp=s.temp||{}, at=s.at||{};
+      for(const k in temp){
+        if(DAIYU_IDS.has(Number(k))){ daiTempMap[k]=temp[k]; daiAtMap[k]=at[k]; daiStaleMap[k]=true; }
+        else { tempMap[k]=temp[k]; atMap[k]=at[k]; staleMap[k]=true; }
+      }
+    }
+  }catch(e){}
+}
+function saveLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    const temp=Object.assign({}, s.temp||{}, tempMap, daiTempMap);
+    const at  =Object.assign({}, s.at||{},   atMap,   daiAtMap);
+    localStorage.setItem(LAST_GOOD_KEY, JSON.stringify({t:Date.now(), temp, at}));
+  }catch(e){}
+}
+// b.temp が来ていれば更新、来ていなければ直前値を stale のまま維持する。
+function mergeTemps(list, idSet, tMap, sMap, aMap){
+  const seen=new Set();
+  for(const b of list){
+    if(!idSet.has(b.id)) continue;
+    seen.add(b.id);
+    if(b.temp!=null){ tMap[b.id]=b.temp; sMap[b.id]=!!b.stale; if(b.at) aMap[b.id]=b.at; }
+    else if(tMap[b.id]!=null){ sMap[b.id]=true; }
+    else { delete tMap[b.id]; sMap[b.id]=true; aMap[b.id]=b.at; }
+  }
+  for(const id of idSet){ if(!seen.has(id) && tMap[id]!=null) sMap[id]=true; }
+  for(const id of Object.keys(tMap)){
+    const t=aMap[id]?Date.parse(aMap[id]):0;
+    if(t && Date.now()-t>LAST_GOOD_MAX_MS){ delete tMap[id]; sMap[id]=true; }
+  }
+}
+loadLastGood();
+
+function fmtAt(iso){
+  if(!iso) return '時刻不明';
+  const d=new Date(iso), p=n=>String(n).padStart(2,'0');
+  const now=new Date();
+  const sameDay=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
+  return sameDay?`${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// ── 露天風呂レンダリング ──
+function render(){
+  const wrap=document.getElementById('wrap');
+  const img=document.getElementById('photo');
+  const pinsEl=document.getElementById('pins');
+  const iw=img.naturalWidth||1368, ih=img.naturalHeight||796;
+  const bw=wrap.clientWidth, bh=wrap.clientHeight;
+  const scale=Math.max(bw/iw, bh/ih);
+  const dw=iw*scale, dh=ih*scale;
+  const ox=(bw-dw)/2, oy=(bh-dh)/2;
+  if(EDIT_MODE){window._eox=ox;window._eoy=oy;window._edw=dw;window._edh=dh;}
+
+  // ピンサイズを画像の実表示幅に比例させる
+  const p=dw/100;
+  const r=document.documentElement;
+  r.style.setProperty('--pin-nm',   (p*2.05*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-tp',   (p*3.30*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-nm',(p*1.80*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-sm-tp',(p*2.85*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-nm',(p*2.30*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-lg-tp',(p*3.80*PIN_SCALE).toFixed(1)+'px');
+  r.style.setProperty('--pin-ban-w',(p*14.5*PIN_SCALE).toFixed(1)+'px');   // 使用禁止ピンの箱（通常ピン相当・固定）
+  r.style.setProperty('--pin-ban-h',(p*8*PIN_SCALE).toFixed(1)+'px');
+  const GAP=Math.round(p*4.8);   // ドットと箱の隙間（pu/pv 未指定時）
+
+  // 箱は常に「中心」基準で配置。ラインはドット→箱の中心。
+  let html='';
+  for(const s of SPOTS){
+    const px=ox+s.u*dw, py=oy+s.v*dh;
+    const hasBox=(s.pu!=null&&s.pv!=null);
+    const bx=hasBox?ox+s.pu*dw:px;
+    const by=hasBox?oy+s.pv*dh:py-GAP;   // 仮
+    const dist=Math.hypot(bx-px,by-py);
+    const ang=Math.atan2(by-py,bx-px)*180/Math.PI;
+    const sc=s.scale||1;
+    const scStyle=sc!==1?` scale(${sc})`:'';
+    const t=tempMap[s.id];
+    const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
+    const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
+    const isStale=!isOnline||staleMap[s.id];
+    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
+    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}">
+      ${s.banned
+        ? `<div class="ban-wrap">${s.hideName?'':`<div class="nm">${s.name}</div>`}<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span></div>`
+        : `${s.hideName?'':`<div class="nm">${s.name}</div>`}<div class="tp">${label}</div>${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}`}
+    </div>`;
+  }
+  pinsEl.innerHTML=html;
+
+  // pu/pv 未指定: 箱の高さを測り、中心を「ドットから GAP + 箱の半分」上に
+  const kids=pinsEl.children;
+  SPOTS.forEach((s,k)=>{
+    const lineEl=kids[k*3+1], pinEl=kids[k*3+2];
+    // 使用禁止ピン: 箱は通常ピンと同じ固定サイズ。文字ブロック全体を等倍で縮小して収める
+    if(s.banned){
+      const w=pinEl.querySelector('.ban-wrap');
+      if(w){
+        w.style.transform='';
+        const sc2=Math.min((pinEl.clientWidth-8)/w.scrollWidth, (pinEl.clientHeight-8)/w.scrollHeight, 1);
+        if(sc2<1) w.style.transform='scale('+sc2.toFixed(3)+')';
+      }
+    }
+    if(s.pu!=null&&s.pv!=null) return;
+    const px=ox+s.u*dw, py=oy+s.v*dh;
+    const by=Math.round(py - GAP - pinEl.offsetHeight/2);
+    pinEl.style.top=by+'px';
+    lineEl.style.width=(py-by)+'px';
+    lineEl.style.transform='rotate(-90deg)';
+  });
+
+  // 移動可能な表示要素（湯畑文字・温度範囲）の位置を反映
+  // 追加アイコン: CUSTOM_ICONS から img を生成・更新・不要分を除去
+  const _wrapEl=document.getElementById('wrap');
+  for(const ic of CUSTOM_ICONS){
+    let el=document.getElementById(ic.key);
+    if(!el){ el=document.createElement('img'); el.id=ic.key; el.className='custom-icon'; el.alt=''; _wrapEl.appendChild(el); }
+    if(el.getAttribute('src')!==ic.src) el.src=ic.src;
+    el.style.width='calc('+(10*(ic.scale||1)).toFixed(2)+'vw)';
+  }
+  _wrapEl.querySelectorAll('img.custom-icon').forEach(el=>{ if(!CUSTOM_ICONS.some(ic=>ic.key===el.id)) el.remove(); });
+
+  for(const f of FLOATS){
+    const el=document.getElementById(f.key);
+    if(el){ el.style.left=(ox+f.u*dw)+'px'; el.style.top=(oy+f.v*dh)+'px'; }
+  }
+
+  if(EDIT_MODE && window.addEditHandles && !window._dragSpot) window.addEditHandles();
+}
+
+// ── 大浴場レンダリング ──
+// 大浴場センサーが誤って水風呂に入れられる等で異常に低い値が出ることがあるため、
+// 表示は39℃を下限としてクランプする。実際に下回っていた場合は、お客様には
+// 気づかれない程度の小さいドット(.card-flag)だけを右上に出して従業員に知らせる。
+const DAIYU_MIN_DISPLAY = 39;
+function renderDaiyu(){
+  for(const s of DAIYU_SPOTS){
+    const t=daiTempMap[s.id];
+    const card=document.getElementById(`card-${s.id}`);
+    const tempEl=document.getElementById(`temp-${s.id}`);
+    const updEl=document.getElementById(`upd-${s.id}`);
+    if(!card||!tempEl) continue;
+    const belowMin=t!=null&&t<DAIYU_MIN_DISPLAY;
+    const dTemp=belowMin?DAIYU_MIN_DISPLAY:t;
+    const label=dTemp!=null?`${Number(dTemp).toFixed(1)}℃`:'--.-℃';
+    tempEl.textContent=label;
+    tempEl.style.color=tempTextColor(dTemp);
+    card.style.setProperty('--bc', tempColor(s.id, dTemp));
+    const isStale=!isOnline||daiStaleMap[s.id];
+    card.classList.toggle('stale', isStale);
+    card.classList.toggle('flagged', belowMin);
+    if(updEl) updEl.textContent=isStale&&daiAtMap[s.id]?`⚠ ${fmtAt(daiAtMap[s.id])}`:'';
+  }
+}
+
+function setConn(online, anyStale){
+  const el=document.getElementById('conn');
+  if(!online){ el.className='connbadge ng'; el.textContent='🔴 未接続（表示は最終値）'; }
+  else if(anyStale){ el.className='connbadge warn'; el.textContent='🟡 一部未取得'; }
+  else{ el.className='connbadge ok'; el.textContent='🟢 接続中'; }
+}
+
+function setConn2(online, anyStale){
+  const el=document.getElementById('conn2');
+  if(!online){ el.className='connbadge ng'; el.textContent='🔴 未接続'; }
+  else if(anyStale){ el.className='connbadge warn'; el.textContent='🟡 一部未取得'; }
+  else{ el.className='connbadge ok'; el.textContent='🟢 接続中'; }
+}
+
+let lastUpdated=null, lastOnline=null, lastAttempt=null;
+async function load(){
+  try{
+    const res=await fetch('/api/baths');
+    const data=await res.json();
+    const online=data.online!==false;
+    if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
+    lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
+    const shownIds=new Set(SPOTS.map(s=>s.id));
+    mergeTemps(data.baths, shownIds, tempMap, staleMap, atMap);
+    mergeTemps(data.baths, DAIYU_IDS, daiTempMap, daiStaleMap, daiAtMap);
+    saveLastGood();
+    const anyStale=!isOnline || SPOTS.some(s=>staleMap[s.id]);
+    const daiAnyStale=!isOnline || Array.from(DAIYU_IDS).some(id=>daiStaleMap[id]);
+    const amb=data.gateway;
+    if(amb&&amb.temp!=null){
+      document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
+    }
+    setConn(isOnline, anyStale);
+    setConn2(isOnline, daiAnyStale);
+    if(data.last_updated){
+      const d=new Date(data.last_updated),p=n=>String(n).padStart(2,'0');
+      const label=online?'最終更新':'最終取得';
+      document.getElementById('upd').textContent=`${label} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    render();
+    renderDaiyu();
+  }catch(e){
+    isOnline=false; lastOnline=false; setConn(false); setConn2(false, false); render(); renderDaiyu();
+  }
+}
+
+// ── 凡例グラデーションバー（実際の色分けと同じ関数で描画。閾値より少し下から表示）──
+(function(){
+  const LEGEND_MIN = TEMP_THRESHOLD - 4;
+  const stops=[];
+  for(let t=LEGEND_MIN;t<=TEMP_MAX;t+=1){
+    const [r,g,b]=tempGradRgb(t);
+    stops.push(`rgb(${r|0},${g|0},${b|0}) ${(t-LEGEND_MIN)/(TEMP_MAX-LEGEND_MIN)*100}%`);
+  }
+  document.getElementById('legend-gradbar').style.background=`linear-gradient(0deg, ${stops.join(',')})`;
+})();
+
+document.getElementById('photo').onload=render;
+window.addEventListener('resize',render);
+render();
+load();
+setInterval(load,10000);
+
+function updateClock(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const days=['日','月','火','水','木','金','土'];
+  const date=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}（${days[d.getDay()]}）`;
+  const time=`${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  document.getElementById('clock').innerHTML=`<span class="date">${date}</span><span class="time">${time}</span>`;
+}
+updateClock();
+setInterval(updateClock,1000);
+
+// ── 編集モード ──
+if(EDIT_MODE){
+  window._dragSpot=null;
+
+  // 操作パネル
+  const ep=document.createElement('div');
+  ep.style.cssText='position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,.9);color:#fff;padding:12px 16px;border-radius:10px;font-size:12px;font-family:monospace;min-width:440px;border:2px solid #FFD700;';
+  ep.innerHTML='<div style="font-weight:bold;color:#FFD700;margin-bottom:6px">📍 編集モード — 🟡金=湯 / 🔵水色=文字・表 をドラッグ<button id="ep-hide" style="float:right;padding:2px 8px;background:#444;color:#fff;border:1px solid #888;border-radius:5px;cursor:pointer;font-size:11px">隠す</button></div><div id="ep-body"><pre id="ep-out" style="margin:0;font-size:11px;color:#8fe39a;white-space:pre-wrap"></pre><button id="ep-copy" style="margin-top:8px;padding:4px 14px;background:#2d5a27;color:#fff;border:1px solid #6f9;border-radius:6px;cursor:pointer;font-size:12px">コピー</button></div>';
+  document.body.appendChild(ep);
+  document.getElementById('ep-hide').onclick=()=>{
+    const b=document.getElementById('ep-body'), btn=document.getElementById('ep-hide');
+    const hidden=b.style.display==='none';
+    b.style.display=hidden?'block':'none';
+    btn.textContent=hidden?'隠す':'表示';
+    ep.style.minWidth=hidden?'440px':'0';
+  };
+
+  function epUpdate(){
+    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''} },`);
+    const flines=FLOATS.map(f=>`  { key:"${f.key}", name:"${f.name}", u:${f.u.toFixed(3)}, v:${f.v.toFixed(3)} },`);
+    document.getElementById('ep-out').textContent=
+      'const SPOTS = [\n'+lines.join('\n')+'\n];\n\n'+
+      'const FLOATS = [\n'+flines.join('\n')+'\n];';
+  }
+  document.getElementById('ep-copy').onclick=()=>{
+    navigator.clipboard.writeText(document.getElementById('ep-out').textContent).then(()=>{
+      const b=document.getElementById('ep-copy');
+      b.textContent='✓ コピー済み'; setTimeout(()=>b.textContent='コピー',1500);
+    });
+  };
+  window._epUpdate=epUpdate;
+
+  // ハンドルを現在の座標に描画（毎render時に呼ばれる）
+  window.addEditHandles=function(){
+    const wrap=document.getElementById('wrap');
+    const ox=window._eox||0, oy=window._eoy||0, dw=window._edw||1, dh=window._edh||1;
+    let cont=document.getElementById('ehandles');
+    if(!cont){
+      cont=document.createElement('div');
+      cont.id='ehandles';
+      cont.style.cssText='position:absolute;inset:0;z-index:600;';
+      wrap.appendChild(cont);
+    }
+    cont.innerHTML='';
+    const mk=(obj,kind,color)=>{
+      const px=ox+obj.u*dw, py=oy+obj.v*dh;
+      const h=document.createElement('div');
+      h.className='ehandle';
+      h.dataset.kind=kind;
+      h.dataset.key=(kind==='spot'?obj.id:obj.key);
+      h.style.cssText=`position:absolute;left:${px}px;top:${py}px;width:28px;height:28px;border-radius:50%;background:${color};border:3px solid #fff;transform:translate(-50%,-50%);cursor:grab;box-shadow:0 0 12px rgba(0,0,0,.8);`;
+      h.title=obj.name;
+      cont.appendChild(h);
+    };
+    for(const s of SPOTS) mk(s,'spot','rgba(255,215,0,.9)');
+    for(const f of FLOATS) mk(f,'float','rgba(0,200,255,.9)');
+  };
+
+  // ドラッグ操作（イベントは一度だけ登録）
+  const wrap=document.getElementById('wrap');
+  wrap.addEventListener('mousedown',e=>{
+    const h=e.target.closest('.ehandle');
+    if(!h) return;
+    e.preventDefault();
+    window._dragSpot = h.dataset.kind==='spot'
+      ? SPOTS.find(s=>String(s.id)===h.dataset.key)
+      : FLOATS.find(f=>f.key===h.dataset.key);
+    h.style.cursor='grabbing'; h.style.opacity='.55';
+  });
+  window.addEventListener('mousemove',e=>{
+    const s=window._dragSpot;
+    if(!s) return;
+    const rect=wrap.getBoundingClientRect();
+    const ox=window._eox||0,oy=window._eoy||0,dw=window._edw||1,dh=window._edh||1;
+    s.u=Math.max(0,Math.min(1,(e.clientX-rect.left-ox)/dw));
+    s.v=Math.max(0,Math.min(1,(e.clientY-rect.top-oy)/dh));
+    window.addEditHandles();  // ハンドルだけ更新（render()は呼ばない）
+    epUpdate();
+    // ピン表示も追従させたいので pins だけ再描画
+    render();
+  });
+  window.addEventListener('mouseup',()=>{ window._dragSpot=null; });
+
+  epUpdate();
+  render();            // _eox 等を確定
+  window.addEditHandles();  // ハンドル初回描画
+}
+</script>
+</body>
+</html>
