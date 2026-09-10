@@ -39,6 +39,9 @@
   #corner-location .t{color:#fff;}
   #upd, .connbadge{display:none;}
   body.hide-corner #corner-time, body.hide-corner #corner-location{display:none!important;}
+  body.hide-location #corner-location{display:none!important;}
+  body.hide-clock #corner-time{display:none!important;}
+  body.hide-yugata #yugata{display:none!important;}
 
   /* ── 露天風呂 ── */
   #wrap{position:relative;flex:1;overflow:hidden;background:#2c380b;}
@@ -153,6 +156,9 @@ const CORNER_SCALE = 0.7;
 
 // ── 現在地・時刻のリアルタイム表示（CMSから 表示/非表示）──
 const SHOW_CORNER = true;
+const SHOW_LOCATION = true;
+const SHOW_CLOCK = true;
+const SHOW_YUGATA = true;
 
 // ── 上部の見出し（CMSから：タイトル/テロップ/なし・文言・大きさ・寄せ）──
 const HEADER_MODE  = "ticker";      // "title" | "ticker" | "none"
@@ -198,6 +204,9 @@ const BAN_TEXT_JA = "メンテナンス中";
 const BAN_TEXT_EN = "Closed";
 document.documentElement.style.setProperty('--corner-scale', CORNER_SCALE);
 if(!SHOW_CORNER) document.body.classList.add('hide-corner');
+if(!SHOW_LOCATION) document.body.classList.add('hide-location');
+if(!SHOW_CLOCK) document.body.classList.add('hide-clock');
+if(!SHOW_YUGATA) document.body.classList.add('hide-yugata');
 
 // 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
