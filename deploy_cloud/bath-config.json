@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-10 06:16:51",
+  "updated_at": "2026-09-10 10:18:06",
   "note": "スマホ(run_lite.py)が毎サイクル取得する『温度取得対象リスト』。湯畑(露天風呂)の風呂はCMSが公開時に書き換える。大浴場・パントリーはCMS対象外なのでここで直接管理する。name = Inkbirdアプリのセンサー名（湯畑は完全一致で照合）。",
   "baths": [
     {
@@ -24,8 +24,7 @@
       "id": 5,
       "name": "座湯",
       "device": "湯畑",
-      "color": "neutral",
-      "active": false
+      "color": "neutral"
     },
     {
       "id": 6,
@@ -47,5 +46,10 @@
       "color": "warm",
       "sensor_name": "女湯"
     }
-  ]
+  ],
+  "gateway": {
+    "sensor": "外気温",
+    "device": "",
+    "active": true
+  }
 }
