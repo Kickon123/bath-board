@@ -334,9 +334,9 @@ function render(){
     const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
-    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
-    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}">
+    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}${s.noDot?';display:none':''}"></div>`;
+    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7${(s.noBox||s.noDot)?';display:none':''}"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}${s.noBox?';display:none':''}">
       ${s.banned
         ? `<div class="ban-wrap">${s.hideName?'':`<div class="nm">${s.name}</div>`}<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span></div>`
         : `${s.hideName?'':`<div class="nm">${s.name}</div>`}<div class="tp">${label}</div>${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}`}
@@ -460,7 +460,7 @@ if(EDIT_MODE){
   };
 
   function epUpdate(){
-    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''} },`);
+    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''}${s.noBox?', noBox:true':''}${s.noDot?', noDot:true':''} },`);
     const flines=FLOATS.map(f=>`  { key:"${f.key}", name:"${f.name}", u:${f.u.toFixed(3)}, v:${f.v.toFixed(3)} },`);
     document.getElementById('ep-out').textContent=
       'const SPOTS = [\n'+lines.join('\n')+'\n];\n\n'+
