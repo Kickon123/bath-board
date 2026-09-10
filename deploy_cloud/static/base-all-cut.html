@@ -31,6 +31,7 @@
   body.hide-clock #clock{display:none!important;}
   body.hide-yugata #yugata{display:none!important;}
   body.hide-datsuijo #datsuijo{display:none!important;}
+  body.hide-legend #legend{display:none!important;}
   .connbadge{font-size:0.85vw;font-weight:bold;padding:2px 6px;border-radius:10px;}
   .connbadge.ok{color:#8fe39a;background:rgba(40,120,60,.35);}
   .connbadge.warn{color:#ffd24a;background:rgba(150,110,20,.45);}
@@ -84,7 +85,7 @@
     height:auto;max-width:none;object-fit:contain;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
     pointer-events:none;z-index:3;}
-  #legend{position:absolute;transform:translate(-50%,-50%);
+  #legend{position:absolute;transform:translate(-50%,-50%) scale(var(--legend-scale,1));
     width:max-content;
     background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
     border-radius:14px;font-size:0.9vw;}
@@ -255,11 +256,14 @@ const SHOW_LOCATION = true;
 const SHOW_CLOCK = true;
 const SHOW_YUGATA = true;
 const SHOW_DATSUIJO = true;
+const SHOW_LEGEND = true;
+const LEGEND_SCALE = 1;
 if(!SHOW_CORNER) document.body.classList.add('hide-corner');
 if(!SHOW_LOCATION) document.body.classList.add('hide-location');
 if(!SHOW_CLOCK) document.body.classList.add('hide-clock');
 if(!SHOW_YUGATA) document.body.classList.add('hide-yugata');
 if(!SHOW_DATSUIJO) document.body.classList.add('hide-datsuijo');
+if(!SHOW_LEGEND) document.body.classList.add('hide-legend');
 
 // ── 上部の見出し（CMSから：タイトル/なし・文言・大きさ・寄せ。allcut はテロップ非対応）──
 const HEADER_MODE  = "title";       // "title" | "none"
@@ -284,6 +288,7 @@ const HEADER_ALIGN = "left";         // "left" | "center" | "right"
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.9;
 document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
+document.documentElement.style.setProperty('--legend-scale', LEGEND_SCALE);
 
 // ── 湯畑アイコンの大きさ（CMSから調整）──
 const YUGATA_SCALE = 1;

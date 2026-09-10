@@ -43,6 +43,7 @@
   body.hide-clock #corner-time{display:none!important;}
   body.hide-yugata #yugata{display:none!important;}
   body.hide-datsuijo #datsuijo{display:none!important;}
+  body.hide-legend #legend{display:none!important;}
 
   /* ── 露天風呂 ── */
   #wrap{position:relative;flex:1;overflow:hidden;background:#2c380b;}
@@ -87,7 +88,7 @@
     height:auto;max-width:none;object-fit:contain;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
     pointer-events:none;z-index:3;}
-  #legend{position:absolute;transform:translate(-50%,-50%);
+  #legend{position:absolute;transform:translate(-50%,-50%) scale(var(--legend-scale,1));
     width:max-content;
     background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
     border-radius:14px;font-size:0.9vw;}
@@ -159,6 +160,8 @@ const SHOW_LOCATION = true;
 const SHOW_CLOCK = true;
 const SHOW_YUGATA = true;
 const SHOW_DATSUIJO = true;
+const SHOW_LEGEND = true;
+const LEGEND_SCALE = 1;
 
 // ── 上部の見出し（CMSから：タイトル/テロップ/なし・文言・大きさ・寄せ）──
 const HEADER_MODE  = "ticker";      // "title" | "ticker" | "none"
@@ -190,6 +193,7 @@ const HEADER_ALIGN = "center";       // "left" | "center" | "right"
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.7;
 document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
+document.documentElement.style.setProperty('--legend-scale', LEGEND_SCALE);
 
 // ── 湯畑アイコンの大きさ（CMSから調整）──
 const YUGATA_SCALE = 1.25;
@@ -208,6 +212,7 @@ if(!SHOW_LOCATION) document.body.classList.add('hide-location');
 if(!SHOW_CLOCK) document.body.classList.add('hide-clock');
 if(!SHOW_YUGATA) document.body.classList.add('hide-yugata');
 if(!SHOW_DATSUIJO) document.body.classList.add('hide-datsuijo');
+if(!SHOW_LEGEND) document.body.classList.add('hide-legend');
 
 // 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
