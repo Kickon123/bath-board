@@ -42,6 +42,7 @@
   body.hide-location #corner-location{display:none!important;}
   body.hide-clock #corner-time{display:none!important;}
   body.hide-yugata #yugata{display:none!important;}
+  body.hide-datsuijo #datsuijo{display:none!important;}
 
   /* ── 露天風呂 ── */
   #wrap{position:relative;flex:1;overflow:hidden;background:#2c380b;}
@@ -159,6 +160,7 @@ const SHOW_CORNER = true;
 const SHOW_LOCATION = true;
 const SHOW_CLOCK = true;
 const SHOW_YUGATA = true;
+const SHOW_DATSUIJO = true;
 
 // ── 上部の見出し（CMSから：タイトル/テロップ/なし・文言・大きさ・寄せ）──
 const HEADER_MODE  = "ticker";      // "title" | "ticker" | "none"
@@ -207,6 +209,7 @@ if(!SHOW_CORNER) document.body.classList.add('hide-corner');
 if(!SHOW_LOCATION) document.body.classList.add('hide-location');
 if(!SHOW_CLOCK) document.body.classList.add('hide-clock');
 if(!SHOW_YUGATA) document.body.classList.add('hide-yugata');
+if(!SHOW_DATSUIJO) document.body.classList.add('hide-datsuijo');
 
 // 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
