@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>フロント 温度マップ</title>
+<title>フロント/湯畑 温度マップ</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:#0d140a;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;
@@ -23,6 +23,9 @@
     from{transform:translateX(0);}
     to{transform:translateX(-50%);}
   }
+  /* 上部見出しを「タイトル（静止）」表示にした場合 */
+  #header-title{display:none;flex:1;color:#FFD700;font-weight:bold;letter-spacing:.06em;
+    font-size:3.8vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 24px;}
 
   /* ── 時計 / 現在地・気温（位置・大きさともCMSから調整可能） ── */
   #corner-time, #corner-location{
@@ -35,6 +38,12 @@
   #corner-location{display:flex;gap:12px;align-items:center;}
   #corner-location .t{color:#fff;}
   #upd, .connbadge{display:none;}
+  body.hide-corner #corner-time, body.hide-corner #corner-location{display:none!important;}
+  body.hide-location #corner-location{display:none!important;}
+  body.hide-clock #corner-time{display:none!important;}
+  body.hide-yugata #yugata{display:none!important;}
+  body.hide-datsuijo #datsuijo{display:none!important;}
+  body.hide-legend #legend{display:none!important;}
 
   /* ── 露天風呂 ── */
   #wrap{position:relative;flex:1;overflow:hidden;background:#2c380b;}
@@ -79,7 +88,7 @@
     height:auto;max-width:none;object-fit:contain;
     filter:drop-shadow(0 2px 8px rgba(0,0,0,.55));
     pointer-events:none;z-index:3;}
-  #legend{position:absolute;transform:translate(-50%,-50%);
+  #legend{position:absolute;transform:translate(-50%,-50%) scale(var(--legend-scale,1));
     width:max-content;
     background:rgba(10,18,8,.6);color:#dfd5b8;padding:14px 20px;
     border-radius:14px;font-size:0.9vw;}
@@ -92,7 +101,7 @@
 <body>
 
 <div id="wrap">
-  <img src="/static/screens/rotenburo2.png?v=1788759066" id="photo" alt="湯畑"/>
+  <img src="/static/screens/rotenburo2.png?v=1789102526" id="photo" alt="湯畑"/>
   <div id="pins"></div>
   <img src="/static/yugata.png" id="yugata" alt="湯畑"/>
   <div id="legend">
@@ -139,9 +148,46 @@ const PIN_SCALE = 0.93;
 // ── 時刻・現在地/気温の大きさ（CMSから調整）──
 const CORNER_SCALE = 0.8;
 
+// ── 現在地・時刻のリアルタイム表示（CMSから 表示/非表示）──
+const SHOW_CORNER = true;
+const SHOW_LOCATION = true;
+const SHOW_CLOCK = true;
+const SHOW_YUGATA = true;
+const SHOW_DATSUIJO = true;
+const SHOW_LEGEND = true;
+const LEGEND_SCALE = 1;
+
+// ── 上部の見出し（CMSから：タイトル/テロップ/なし・文言・大きさ・寄せ）──
+const HEADER_MODE  = "ticker";      // "title" | "ticker" | "none"
+const HEADER_TEXT  = "湯あみ着はエレベーター横のカゴまでお持ちください　　　　　　　　Please return your bathwear to the basket next to the elevator";
+const HEADER_SCALE = 1;
+const HEADER_ALIGN = "center";       // "left" | "center" | "right"
+(function(){
+  const bar = document.getElementById('topbar');
+  if(!bar) return;
+  if(HEADER_MODE === 'none'){ bar.style.display = 'none'; return; }
+  const tw = document.getElementById('ticker-wrap');
+  const ht = document.getElementById('header-title');
+  if(HEADER_MODE === 'title'){
+    if(tw) tw.style.display = 'none';
+    if(ht){
+      ht.style.display = 'block';
+      ht.textContent = HEADER_TEXT;
+      ht.style.fontSize = (3.8 * HEADER_SCALE) + 'vw';
+      ht.style.textAlign = HEADER_ALIGN;
+    }
+  }else{ // ticker
+    document.querySelectorAll('.ticker-item').forEach(s=>{
+      s.textContent = HEADER_TEXT;
+      s.style.fontSize = (3.8 * HEADER_SCALE) + 'vw';
+    });
+  }
+})();
+
 // ── 脱衣所アイコンの大きさ（CMSから調整）──
 const DATSUIJO_SCALE = 0.6;
 document.documentElement.style.setProperty('--datsuijo-scale', DATSUIJO_SCALE);
+document.documentElement.style.setProperty('--legend-scale', LEGEND_SCALE);
 
 // ── 湯畑アイコンの大きさ（CMSから調整）──
 const YUGATA_SCALE = 2;
@@ -155,6 +201,12 @@ const CUSTOM_ICONS = [
 const BAN_TEXT_JA = "メンテナンス中";
 const BAN_TEXT_EN = "Closed";
 document.documentElement.style.setProperty('--corner-scale', CORNER_SCALE);
+if(!SHOW_CORNER) document.body.classList.add('hide-corner');
+if(!SHOW_LOCATION) document.body.classList.add('hide-location');
+if(!SHOW_CLOCK) document.body.classList.add('hide-clock');
+if(!SHOW_YUGATA) document.body.classList.add('hide-yugata');
+if(!SHOW_DATSUIJO) document.body.classList.add('hide-datsuijo');
+if(!SHOW_LEGEND) document.body.classList.add('hide-legend');
 
 // 28℃以下は青固定、28〜40℃は黄(hue50)→純赤(hue0)の暖色域だけで多段グラデーション。
 // 紫・緑は一切使わない「温度計」らしい2段構成。/allcutと同一ロジック。
@@ -188,6 +240,48 @@ function tempColor(id, t){
 }
 
 let tempMap={}, staleMap={}, atMap={}, isOnline=true;
+
+// ── 直前値の保持 ──────────────────────────────────────
+// サーバが latest.json を失った直後（再デプロイ・スリープ復帰）や、
+// 名前変更などで新しい温度が来ない間は、前回取得できた温度をそのまま
+// 「未接続（点線）」表示で出し続け、新しい値が来たら置き換える。
+const LAST_GOOD_KEY='bathLastGood', LAST_GOOD_MAX_MS=60*60*1000; // 60分で -- に戻す
+function loadLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    if(s&&s.t&&Date.now()-s.t<LAST_GOOD_MAX_MS){
+      tempMap=Object.assign({}, s.temp||{});
+      atMap=Object.assign({}, s.at||{});
+      for(const k in tempMap) staleMap[k]=true;
+    }
+  }catch(e){}
+}
+function saveLastGood(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LAST_GOOD_KEY)||'{}');
+    const temp=Object.assign({}, s.temp||{}, tempMap);
+    const at  =Object.assign({}, s.at||{},   atMap);
+    localStorage.setItem(LAST_GOOD_KEY, JSON.stringify({t:Date.now(), temp, at}));
+  }catch(e){}
+}
+// 応答（またはローカル保持分）を既存マップへマージする。
+// b.temp が来ていれば更新、来ていなければ直前値を stale のまま維持。
+function mergeTemps(list, idSet){
+  const seen=new Set();
+  for(const b of list){
+    if(!idSet.has(b.id)) continue;
+    seen.add(b.id);
+    if(b.temp!=null){ tempMap[b.id]=b.temp; staleMap[b.id]=!!b.stale; if(b.at) atMap[b.id]=b.at; }
+    else if(tempMap[b.id]!=null){ staleMap[b.id]=true; }
+    else { delete tempMap[b.id]; staleMap[b.id]=true; atMap[b.id]=b.at; }
+  }
+  for(const id of idSet){ if(!seen.has(id) && tempMap[id]!=null) staleMap[id]=true; }
+  for(const id of Object.keys(tempMap)){
+    const t=atMap[id]?Date.parse(atMap[id]):0;
+    if(t && Date.now()-t>LAST_GOOD_MAX_MS){ delete tempMap[id]; staleMap[id]=true; }
+  }
+}
+loadLastGood();
 
 function fmtAt(iso){
   if(!iso) return '時刻不明';
@@ -237,9 +331,9 @@ function render(){
     const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
-    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}"></div>`;
-    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}">
+    html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}${s.noDot?';display:none':''}"></div>`;
+    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7${(s.noBox||s.noDot)?';display:none':''}"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}${s.noBox?';display:none':''}">
       ${s.banned
         ? `<div class="ban-wrap">${s.hideName?'':`<div class="nm">${s.name}</div>`}<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span></div>`
         : `${s.hideName?'':`<div class="nm">${s.name}</div>`}<div class="tp">${label}</div>${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}`}
@@ -301,12 +395,10 @@ async function load(){
     const online=data.online!==false;
     if(data.last_updated===lastUpdated&&data.last_attempt===lastAttempt&&online===lastOnline) return;
     lastUpdated=data.last_updated; lastAttempt=data.last_attempt; lastOnline=online; isOnline=online;
-    tempMap={}; staleMap={}; atMap={};
     const shownIds=new Set(SPOTS.map(s=>s.id));
-    for(const b of data.baths){
-      if(shownIds.has(b.id)){ tempMap[b.id]=b.temp; staleMap[b.id]=b.stale; atMap[b.id]=b.at; }
-    }
-    const anyStale=data.baths.filter(b=>shownIds.has(b.id)).some(b=>b.stale);
+    mergeTemps(data.baths, shownIds);
+    saveLastGood();
+    const anyStale=!isOnline || SPOTS.some(s=>staleMap[s.id]);
     const amb=data.gateway;
     if(amb&&amb.temp!=null){
       document.getElementById('at').textContent=Number(amb.temp).toFixed(1)+'℃';
@@ -365,7 +457,7 @@ if(EDIT_MODE){
   };
 
   function epUpdate(){
-    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''} },`);
+    const lines=SPOTS.map(s=>`  { id:${s.id}, name:"${s.name}",${s.lg?' lg:true,':s.sm?' sm:true,':''} u:${s.u.toFixed(3)}, v:${s.v.toFixed(3)}${s.pu!=null?`, pu:${s.pu.toFixed(3)}, pv:${s.pv.toFixed(3)}`:''}${s.scale&&s.scale!==1?`, scale:${(+s.scale).toFixed(2)}`:''}${s.noBox?', noBox:true':''}${s.noDot?', noDot:true':''} },`);
     const flines=FLOATS.map(f=>`  { key:"${f.key}", name:"${f.name}", u:${f.u.toFixed(3)}, v:${f.v.toFixed(3)} },`);
     document.getElementById('ep-out').textContent=
       'const SPOTS = [\n'+lines.join('\n')+'\n];\n\n'+
