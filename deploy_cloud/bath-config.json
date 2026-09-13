@@ -55,23 +55,11 @@
       "id": 8,
       "name": "大浴場（男湯）",
       "device": "大浴場(男)",
-      "color": "neutral"
-    },
-    {
-      "id": 9,
-      "name": "大浴場（女湯）",
-      "device": "大浴場(男)",
-      "color": "neutral"
-    },
-    {
-      "id": 20,
-      "name": "大浴場（男湯）",
-      "device": "大浴場(男)",
       "color": "hot",
       "sensor_name": "男湯"
     },
     {
-      "id": 21,
+      "id": 9,
       "name": "大浴場（女湯）",
       "device": "大浴場(男)",
       "color": "warm",
