@@ -1,47 +1,66 @@
 {
-  "updated_at": "2026-09-13 00:55:49",
+  "updated_at": "2026-09-13 09:11:53",
   "note": "スマホ(run_lite.py)が毎サイクル取得する『温度取得対象リスト』。湯畑(露天風呂)の風呂はCMSが公開時に書き換える。大浴場・パントリーはCMS対象外なのでここで直接管理する。name = Inkbirdアプリのセンサー名（湯畑は完全一致で照合）。",
   "baths": [
     {
       "id": 1,
       "name": "高温の湯",
       "device": "湯畑",
-      "color": "hot"
+      "color": "hot",
+      "sensor_name": "高温の湯"
     },
     {
       "id": 2,
       "name": "中温の湯",
       "device": "湯畑",
-      "color": "warm"
+      "color": "warm",
+      "sensor_name": "中温の湯"
     },
     {
       "id": 3,
       "name": "低温の湯",
       "device": "湯畑",
-      "color": "mild"
+      "color": "mild",
+      "sensor_name": "低温の湯"
+    },
+    {
+      "id": 4,
+      "name": "座湯",
+      "device": "湯畑",
+      "color": "neutral",
+      "sensor_name": "座湯"
     },
     {
       "id": 5,
-      "name": "座湯",
+      "name": "立湯",
       "device": "湯畑",
-      "color": "neutral"
+      "color": "neutral",
+      "sensor_name": "立湯"
     },
     {
       "id": 6,
-      "name": "立湯",
+      "name": "女性専用1",
       "device": "湯畑",
-      "color": "neutral"
+      "color": "neutral",
+      "sensor_name": "女性専用1"
     },
     {
       "id": 7,
-      "name": "女性専用1",
+      "name": "女性専用2",
       "device": "湯畑",
-      "color": "neutral"
+      "color": "neutral",
+      "sensor_name": "女性専用2"
     },
     {
       "id": 8,
-      "name": "女性専用2",
-      "device": "湯畑",
+      "name": "大浴場（男湯）",
+      "device": "大浴場(男)",
+      "color": "neutral"
+    },
+    {
+      "id": 9,
+      "name": "大浴場（女湯）",
+      "device": "大浴場(男)",
       "color": "neutral"
     },
     {
