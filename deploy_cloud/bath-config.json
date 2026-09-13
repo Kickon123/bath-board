@@ -52,14 +52,14 @@
       "sensor_name": "女性専用2"
     },
     {
-      "id": 8,
+      "id": 20,
       "name": "大浴場（男湯）",
       "device": "大浴場(男)",
       "color": "hot",
       "sensor_name": "男湯"
     },
     {
-      "id": 9,
+      "id": 21,
       "name": "大浴場（女湯）",
       "device": "大浴場(男)",
       "color": "warm",
