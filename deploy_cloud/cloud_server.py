@@ -25,6 +25,7 @@ CORS(app)
 
 BASE_DIR = Path(__file__).parent
 STORE    = BASE_DIR / "latest.json"
+NAME_ID_MAP = BASE_DIR / "name_id_map.json"   # センサー名→id の自動採番テーブル（永続化）
 BATH_CONFIG = BASE_DIR / "bath-config.json"   # スマホが取得する『温度取得対象リスト』（同梱・フォールバック用）
 # 通常は GitHub の raw を直接読む → CMS公開で再デプロイ不要・数十秒で反映
 BATH_CONFIG_URL = os.environ.get(
@@ -129,6 +130,71 @@ def supa_query_all(n=300):
 
 
 # ── エンドポイント ──────────────────────────────────
+def _load_name_id_map() -> dict:
+    """センサー名→id の対応表。無ければ、現行 bath-config.json の
+    sensor_name/name→id を初期値として作る（＝既存の案内板テンプレ(SPOTS)の
+    id とズレないようにするための種まき）。以後は初めて見る名前にだけ、
+    使われていない最小の空き番号を新規採番する。"""
+    if NAME_ID_MAP.exists():
+        try:
+            return json.loads(NAME_ID_MAP.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    seed = {}
+    if BATH_CONFIG.exists():
+        try:
+            cur = json.loads(BATH_CONFIG.read_text(encoding="utf-8"))
+            for b in cur.get("baths", []):
+                key = (b.get("sensor_name") or b.get("name") or "").strip()
+                if key and isinstance(b.get("id"), int):
+                    seed[key] = b["id"]
+        except Exception:
+            pass
+    _save_name_id_map(seed)
+    return seed
+
+
+def _save_name_id_map(m: dict):
+    NAME_ID_MAP.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _id_for_name(m: dict, name: str) -> int:
+    """名前に対応するidを返す。未登録なら、使われていない最小の番号を新規採番する。"""
+    name = name.strip()
+    if name in m:
+        return m[name]
+    used = set(m.values())
+    nid = 1
+    while nid in used:
+        nid += 1
+    m[name] = nid
+    return nid
+
+
+def _sensors_payload_to_baths(sensors: list) -> list:
+    """新方式(名前ベース)の {"sensors": [{"name","temp",...}]} を、
+    旧方式と同じ {"baths": [{"id","name","temp",...}]} 形へ変換する
+    （id は初見の名前ごとに自動採番・永続化）。"""
+    m = _load_name_id_map()
+    baths = []
+    changed = False
+    for s in sensors:
+        name = str(s.get("name", "")).strip()
+        if not name:
+            continue
+        if name not in m:
+            changed = True
+        bid = _id_for_name(m, name)
+        baths.append({
+            "id": bid, "name": name, "device": "湯畑",
+            "temp": s.get("temp"), "humidity": s.get("humidity"),
+            "stale": s.get("stale", False), "at": s.get("at"),
+        })
+    if changed:
+        _save_name_id_map(m)
+    return baths
+
+
 @app.post("/api/push")
 def api_push():
     if not SECRET or request.headers.get("X-Token") != SECRET:
@@ -136,6 +202,12 @@ def api_push():
     data = request.get_json(silent=True)
     if data is None:
         return jsonify(error="no json"), 400
+    # 新方式（名前ベース、"sensors"配列）が来たら、旧方式と同じ"baths"形へ変換して保存する。
+    # 旧方式（"baths"配列、idはスマホ側で決め打ち）を送ってくる古いスマホとも
+    # そのまま互換動作する（どちらの形式でも受理できる）。
+    if isinstance(data.get("sensors"), list):
+        data = {**data, "baths": _sensors_payload_to_baths(data["sensors"])}
+        data.pop("sensors", None)
     STORE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     supa_insert(data)
     _history.append(data)

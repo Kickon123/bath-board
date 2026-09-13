@@ -58,43 +58,13 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def fetch_remote_baths(cfg: dict) -> list | None:
-    """クラウド(/api/bath-config)から『温度取得対象リスト』を取得する。
-    CMSで露天風呂ピンを追加/削除すると、ここが変わる。
-    取得失敗時はローカルキャッシュ→None（呼び出し側でローカルconfigにフォールバック）。"""
-    url = (cfg.get("cloud", {}).get("url") or "").rstrip("/")
-    if not url:
-        return None
-    try:
-        r = requests.get(url + "/api/bath-config", timeout=10)
-        data = r.json()
-        baths = data.get("baths")
-        if isinstance(baths, list) and baths and all(
-                isinstance(b.get("id"), int) and b.get("name") for b in baths):
-            REMOTE_BATHS_CACHE.write_text(
-                json.dumps(data, ensure_ascii=False), encoding="utf-8")
-            return baths
-        log.info("  [風呂一覧] 取得したJSONの形式が不正 → 無視")
-    except Exception as e:
-        log.info(f"  [風呂一覧取得スキップ] {e}")
-    if REMOTE_BATHS_CACHE.exists():
-        try:
-            return json.loads(REMOTE_BATHS_CACHE.read_text(encoding="utf-8")).get("baths")
-        except Exception:
-            pass
-    return None
-
-
-def remote_gateway_cfg(cfg: dict) -> dict:
-    """CMS が bath-config.json に指定した「外気温（ゲートウェイ）」設定。
-    {"sensor": Inkbird名, "device": 機器名, "active": bool}。未指定なら {}。"""
-    if REMOTE_BATHS_CACHE.exists():
-        try:
-            gw = json.loads(REMOTE_BATHS_CACHE.read_text(encoding="utf-8")).get("gateway")
-            return gw if isinstance(gw, dict) else {}
-        except Exception:
-            pass
-    return {}
+## fetch_remote_baths() / remote_gateway_cfg() は廃止（名前ベース方式への移行）。
+## 従来はCMSが「探すべきセンサー名」の一覧を事前に配り、スマホがそれと一致する
+## ものだけ拾っていた（一致しないと温度が止まる原因になっていた）。
+## 新方式：スマホは Inkbird アプリで見つけたセンサーを名前そのままで
+## 無条件に全部アップロードする。「どのidに割り当てるか」はクラウド側
+## (cloud_server.py) が初見の名前ごとに自動採番して覚える。
+## ゲートウェイ（外気温）は is_gateway_device() の型番判定のみで自動検出する。
 
 
 # ── ADB コマンド実行 ──────────────────────────────────
@@ -522,42 +492,36 @@ def mark_offline(reason: str = ""):
     log.info(f"  [オフライン記録] 前回の温度を保持（理由: {reason or '不明'}）")
 
 
-def update_temps(cfg: dict, sensors: dict,
-                 gateway: dict | None = None) -> int:
+_META_KEYS = {"gateway", "last_updated", "last_attempt", "online"}
+
+
+def update_temps(sensors: dict, gateway: dict | None = None) -> int:
     """
-    sensor_name（センサー名）で湯舟を識別して temperatures.json を書き換える。
-    取得できなかった湯舟は「前回値を保持して stale=True」にし、
-    Web側でその湯舟だけ未接続マーク＋最終値表示にする。
+    見つかったセンサーを、名前をキーにそのまま temperatures.json へ書き込む
+    （フィルタ・一致確認は行わない＝Inkbirdアプリで見えているセンサーは全部保存される）。
+    前回は見えていたが今回見えなかった名前は、前回値を保持して stale=True にする
+    （＝一時的にBluetooth圏外になった等でも、直前の値を出し続けられる）。
+    戻り値は今回検出できたセンサー数。
     """
-    prev: dict = load_temps()   # 個別保持のための前回値
+    prev: dict = load_temps()
     now = datetime.now().isoformat()
     temps: dict = {}
-    matched = 0
-    # センサー名の前後空白差を吸収して照合（例: "パントリー 3F" ↔ "パントリー3F"）
+    # センサー名の前後空白差を吸収（例: "パントリー 3F" ↔ "パントリー3F"）
     sensors_norm = {str(k).strip(): v for k, v in sensors.items()}
-    for bath in cfg["baths"]:
-        # sensor_name が無ければ表示名(name)でセンサーを探す（案a: ピン名=センサー名）
-        sname = (bath.get("sensor_name") or bath["name"]).strip()
-        s = sensors_norm.get(sname)
-        bid = str(bath["id"])
-        if s is None:
-            # 個別取得失敗 → 前回値・最終取得時刻を引き継ぎ、その湯舟だけ未接続(stale)
-            p = prev.get(bid) if isinstance(prev.get(bid), dict) else {}
-            temps[bid] = {
-                "temp":     p.get("temp"),
-                "humidity": p.get("humidity"),
-                "stale":    True,
-                "at":       p.get("at"),   # 最後に取得できた時刻を保持
-            }
-        else:
-            temps[bid] = {
-                "temp":     s["temp"],
-                "humidity": s.get("humidity"),
-                "stale":    False,
-                "at":       now,           # 今回取得できた時刻
-            }
-            matched += 1
-    # ゲートウェイ（外気温）も同様に個別保持
+
+    for name, s in sensors_norm.items():
+        temps[name] = {
+            "temp":     s["temp"],
+            "humidity": s.get("humidity"),
+            "stale":    False,
+            "at":       now,
+        }
+    # 前回は見えていたが今回見つからなかった名前 → 前回値を保持して stale=True
+    for name, p in prev.items():
+        if name in _META_KEYS or name in temps or not isinstance(p, dict):
+            continue
+        temps[name] = {**p, "stale": True}
+
     if gateway is not None:
         temps["gateway"] = {"temp": gateway.get("temp"),
                             "humidity": gateway.get("humidity"), "stale": False, "at": now}
@@ -569,7 +533,7 @@ def update_temps(cfg: dict, sensors: dict,
     temps["last_attempt"] = now
     temps["online"]       = True
     save_temps(temps)
-    return matched
+    return len(sensors_norm)
 
 
 # ── メイン実行 ────────────────────────────────────────
@@ -612,16 +576,10 @@ def run_once(cfg: dict, retries: int = 4) -> bool:
         log.info("=" * 50)
         return False
 
-    # CMS で「外気温（ゲートウェイ）」センサーを指定していれば、そのセンサー値を外気温に使う
-    gwc = remote_gateway_cfg(cfg)
-    if gwc.get("sensor") and gwc.get("active", True):
-        _norm = {str(k).strip(): v for k, v in sensor_temps.items()}
-        hit = _norm.get(str(gwc["sensor"]).strip())
-        if hit and hit.get("temp") is not None:
-            gateway = {"temp": hit["temp"], "humidity": hit.get("humidity")}
-            log.info(f"  外気温をCMS指定センサー「{gwc['sensor']}」から取得: {hit['temp']}°C")
+    # ゲートウェイ（外気温）は型番判定(is_gateway_device)による自動検出のみ。
+    # CMS側で特定センサーを外気温に指定する仕組みは廃止（名前ベース方式への移行）。
 
-    matched = update_temps(cfg, sensor_temps, gateway)
+    matched = update_temps(sensor_temps, gateway)
     saved = load_temps()  # 保持された前回値を表示するため読み戻す
 
     log.info("=" * 50)
@@ -631,19 +589,14 @@ def run_once(cfg: dict, retries: int = 4) -> bool:
         log.info(f"  外気温（加賀市）: {gateway['temp']}°C{h}")
     else:
         log.info("  外気温（加賀市）: -- ℃（3周内に取得できず → 未接続）")
-    for bath in cfg["baths"]:
-        sname = bath.get("sensor_name", bath["name"])
-        s = sensor_temps.get(sname)
-        if s is not None:
-            h = f" / 湿度 {s['humidity']}%" if s.get("humidity") is not None else ""
-            log.info(f"  {bath['name']} ({sname}): {s['temp']}°C{h}")
-        else:
-            # 3周とも取れず → 前回値を保持して未接続(stale)
-            kept = saved.get(str(bath["id"]), {})
-            kt = kept.get("temp")
-            kt_str = f"{kt}°C(前回値)" if kt is not None else "-- ℃"
-            log.info(f"  {bath['name']} ({sname}): {kt_str} ← 3周内に取得できず・未接続(stale)")
-    log.info(f"  → temperatures.json 更新（取得{matched}箇所 / 未接続{len(cfg['baths'])-matched}箇所）")
+    for name, s in sensor_temps.items():
+        h = f" / 湿度 {s['humidity']}%" if s.get("humidity") is not None else ""
+        log.info(f"  {name}: {s['temp']}°C{h}")
+    stale_names = [n for n, v in saved.items()
+                   if n not in _META_KEYS and isinstance(v, dict) and v.get("stale")]
+    if stale_names:
+        log.info(f"  未接続(前回値のまま): {stale_names}")
+    log.info(f"  → temperatures.json 更新（今回検出{matched}件 / 前回値保持{len(stale_names)}件）")
     log.info("=" * 50)
 
     return matched > 0
