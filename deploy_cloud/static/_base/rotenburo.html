@@ -326,7 +326,8 @@ function render(){
   // 箱は常に「中心」を基準に配置。ラインはドット→箱の中心。
   // pu/pv 未指定のピンは、まず仮位置で描画し、あとで箱の高さを測って中心を確定する。
   let html='';
-  for(const s of SPOTS){
+  const visSpots=SPOTS.filter(s=>!s.hidden);   // hidden:true は温度取得は続けるが画面には出さない
+  for(const s of visSpots){
     const px=ox+s.u*dw, py=oy+s.v*dh;
     const hasBox=(s.pu!=null&&s.pv!=null);
     const bx=hasBox?ox+s.pu*dw:px;
@@ -351,7 +352,7 @@ function render(){
 
   // pu/pv 未指定のピン: 箱の高さを測り、箱の中心を「ドットから GAP + 箱の半分」上に置く
   const kids=pinsEl.children;
-  SPOTS.forEach((s,k)=>{
+  visSpots.forEach((s,k)=>{
     const lineEl=kids[k*3+1], pinEl=kids[k*3+2];
     // 使用禁止ピン: 箱は通常ピンと同じ固定サイズ。文字ブロック全体を等倍で縮小して収める
     if(s.banned){
