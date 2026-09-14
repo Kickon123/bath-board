@@ -421,3 +421,4 @@ async function loadLiveTemps(){
 
 ## 6. Webhook修復メモ (2026-09-14)
 GitHub App(Render)にKickon123/bath-boardへのアクセスを追加し、push時の自動デプロイ復旧をテスト中。
+テスト2: 2026-09-14T15:36:48
