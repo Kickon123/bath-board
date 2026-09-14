@@ -418,3 +418,6 @@ async function loadLiveTemps(){
    `main` にマージ → 通常のデプロイ手順（CMSの「🚀公開」／Render Manual Deploy）で
    本番反映
 4. 落ち着いたら `method_b` への影響有無を確認（4-6参照）
+
+## 6. Webhook修復メモ (2026-09-14)
+GitHub App(Render)にKickon123/bath-boardへのアクセスを追加し、push時の自動デプロイ復旧をテスト中。
