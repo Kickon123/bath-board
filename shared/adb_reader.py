@@ -312,12 +312,19 @@ def _force_start(cfg: dict, pkg: str, app_wait: int):
     time.sleep(app_wait)
 
 
-def refresh_device_view(cfg: dict, device_name: str | None = None):
+def refresh_device_view(cfg: dict, device_name: str | None = None) -> bool:
     """
     Inkbirdのホーム一覧から指定デバイスをタップしてデバイス画面を開く。
+    戻り値: 実際にそのデバイス名を見つけてタップできたら True、見つからなければ False。
 
     まずバックキーでホーム一覧への遷移を試みる。
     デバイス名が見つからなければ force-stop → 再起動にフォールバック。
+
+    見つからない場合、以前は「適当な既定座標を代わりにタップする」フォールバックが
+    あったが、そこにたまたま別の（無関係な）デバイスがあると、その値を誤って
+    目的のデバイス名のデータとして記録してしまう事故があったため廃止した
+    （2026-09-15: ホーム画面に存在しない「パントリー」が温度データとして
+    記録されてしまう不具合が発覚）。見つからない場合は素直に諦める。
 
     単体センサー機器（パントリー等、タブなしの1画面のみ）は、複数センサーを
     束ねるハブ機器（湯畑・大浴場等）よりも画面が単純で読み込みが速いため、
@@ -357,17 +364,15 @@ def refresh_device_view(cfg: dict, device_name: str | None = None):
             scroll_device_list(cfg)
         time.sleep(2)
 
-    if coords:
-        log.info(f"  「{target}」発見: x={coords[0]}, y={coords[1]}")
-        adb(cfg, "shell", "input", "tap", str(coords[0]), str(coords[1]))
-    else:
-        device_x = ui.get("device_tap_x", 188)
-        device_y = ui.get("device_tap_y", 1120)
-        log.info(f"  「{target}」が見つからず、デフォルト座標を使用: ({device_x},{device_y})")
-        adb(cfg, "shell", "input", "tap", str(device_x), str(device_y))
+    if not coords:
+        log.info(f"  [スキップ] 「{target}」はホーム画面に見つかりませんでした（データ取得なし）")
+        return False
 
+    log.info(f"  「{target}」発見: x={coords[0]}, y={coords[1]}")
+    adb(cfg, "shell", "input", "tap", str(coords[0]), str(coords[1]))
     log.info(f"  データ読み込み待ち {wait}秒...")
     time.sleep(wait)
+    return True
 
 
 def find_sensor_tabs(root: ET.Element) -> list[tuple[int, int]]:
@@ -395,7 +400,11 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     画面内の表示名は"IBS-M2"等の型番になり全台共通でゲートウェイ扱いされて
     しまうため、device_name（呼び出し元が指定した機器名）をキーに記録する。
     """
-    refresh_device_view(cfg, device_name)
+    found = refresh_device_view(cfg, device_name)
+    if not found:
+        # ホーム画面に実在しないデバイス（例: 圏外/未ペアリングになったパントリー）
+        # を無理にタップして誤ったデータを記録することを避けるため、収集自体を打ち切る。
+        return {"sensors": {}, "gateway": None}
 
     collected: dict = {}
     gateway: dict | None = None

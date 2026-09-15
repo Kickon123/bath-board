@@ -332,9 +332,10 @@ function render(){
     const lc=s.banned?'rgba(130,130,130,0.9)':tempColor(s.id, t);
     const label=t!=null?`${Number(t).toFixed(1)}℃`:'-- ℃';
     const isStale=!isOnline||staleMap[s.id];
+    const noData=!s.banned&&t==null;   // 温度が取得できていない（長期間圏外含む）場合は箱・線を出さない
     html+=`<div class="dot" style="left:${px}px;top:${py}px;background:${lc}${s.noDot?';display:none':''}"></div>`;
-    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7${(s.noBox||s.noDot)?';display:none':''}"></div>`;
-    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}${s.noBox?';display:none':''}">
+    html+=`<div class="line" style="left:${px}px;top:${py}px;width:${dist}px;transform:rotate(${ang}deg);background:${lc};opacity:.7${(s.noBox||s.noDot||noData)?';display:none':''}"></div>`;
+    html+=`<div class="pin${s.sm?' sm':s.lg?' lg':''}${s.banned?' banned':''}${isStale?' stale':''}" style="left:${bx}px;top:${by}px;--lc:${lc};transform:translate(-50%,-50%)${scStyle}${(s.noBox||noData)?';display:none':''}">
       ${s.banned
         ? `<div class="ban-wrap">${s.hideName?'':`<div class="nm">${s.name}</div>`}<span class="ban">${BAN_TEXT_JA}<span class="ban-en">${BAN_TEXT_EN}</span></span></div>`
         : `${s.hideName?'':`<div class="nm">${s.name}</div>`}<div class="tp">${label}</div>${isStale&&atMap[s.id]?`<span class="old">⚠ 最終 ${fmtAt(atMap[s.id])}</span>`:''}`}
