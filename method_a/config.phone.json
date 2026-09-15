@@ -16,7 +16,7 @@
     "single_sensor_wait": 2,
     "app_launch_wait": 9,
     "nav_wait": 2.5,
-    "devices": ["湯畑", "大浴場(男)", "パントリー 3F", "パントリー 4F", "パントリー 5F"],
+    "devices": [],
     "single_sensor_devices": ["パントリー 3F", "パントリー 4F", "パントリー 5F"],
     "ui": {
       "close_btn_x":  45,

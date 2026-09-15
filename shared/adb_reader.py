@@ -303,6 +303,39 @@ def scroll_device_list(cfg: dict):
     time.sleep(1.5)
 
 
+# ホーム画面のデバイスタイル名の resource-id（2026-09-15 実機ダンプで確認済み。
+# 検索欄・ボタン・下部タブ「ホーム/スマート/ショップ/マイページ」は別のIDのため混同しない）
+DEVICE_NAME_RID = "com.inkbird.inkbirdapp:id/device_name"
+
+
+def discover_devices(cfg: dict) -> list[str]:
+    """ホーム画面に今並んでいるデバイス（Inkbirdアプリでペアリング済みの機器）を
+    自動で列挙する。config.json の adb.devices を手動で管理しなくても、
+    新しいセンサーをペアリングするだけで次回サイクルから自動的に拾えるようにするため。
+    一覧が画面に収まらない場合はスクロールしながら探し、スクロールしても
+    新しい名前が増えなくなったら最下部と判断して打ち切る。"""
+    seen: list[str] = []
+    seen_set: set[str] = set()
+    max_scrolls = cfg["adb"].get("device_scan_max_scrolls", 6)
+    prev_count = -1
+    for i in range(max_scrolls + 1):
+        root = dump_ui(cfg)
+        if root is None:
+            break
+        for n in root.iter("node"):
+            if n.get("resource-id") == DEVICE_NAME_RID:
+                name = n.get("text", "").strip()
+                if name and name not in seen_set:
+                    seen_set.add(name)
+                    seen.append(name)
+        if len(seen) == prev_count:
+            break  # スクロールしても増えない＝最下部まで見た
+        prev_count = len(seen)
+        if i < max_scrolls:
+            scroll_device_list(cfg)
+    return seen
+
+
 def _force_start(cfg: dict, pkg: str, app_wait: int):
     """force-stop → ランチャー起動（フォールバック用）"""
     adb(cfg, "shell", "am", "force-stop", pkg)
@@ -390,10 +423,12 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     1つのInkbirdデバイスのセンサーを全タブ巡回して収集する。
     戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
 
-    config の adb.single_sensor_devices に列挙された機器（パントリーの単体
-    温湿度計など）は、タブ探索・タップを一切行わず選択直後の画面だけを読む。
-    画面内の表示名は"IBS-M2"等の型番になり全台共通でゲートウェイ扱いされて
-    しまうため、device_name（呼び出し元が指定した機器名）をキーに記録する。
+    単体温湿度計（パントリー等・タブなし機器）かどうかは、デバイス画面を開いた後に
+    find_sensor_tabs() でタブの有無を見て自動判定する（config側での事前登録は不要）。
+    後方互換のため、config の adb.single_sensor_devices に明示的に列挙されている
+    場合もタブなし扱いにする。
+    単体機器は画面自体に"IBS-M2"等の型番しか表示されず全台共通名になってしまう
+    ため、device_name（呼び出し元がホーム画面から取得した表示名）をキーに記録する。
     """
     refresh_device_view(cfg, device_name)
 
@@ -401,7 +436,11 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
     gateway: dict | None = None
     tab_wait = cfg["adb"].get("tab_wait", 4)
     single_sensor_devices = set(cfg["adb"].get("single_sensor_devices", []))
-    single_sensor = _norm_name(device_name) in {_norm_name(n) for n in single_sensor_devices}
+    forced_single = _norm_name(device_name) in {_norm_name(n) for n in single_sensor_devices}
+
+    root = dump_ui(cfg)
+    tabs = find_sensor_tabs(root) if root is not None else []
+    single_sensor = forced_single or not tabs
 
     def read_current(label: str, root_override=None):
         nonlocal gateway
@@ -420,20 +459,20 @@ def collect_device_temperatures(cfg: dict, device_name: str) -> dict:
             log.info(f"    {label}: [{device_name}] {s['temp']}°C" +
                      (f" / {s['humidity']}%" if s.get("humidity") is not None else ""))
         elif is_gateway_device(dev):
-            gateway = {"temp": s["temp"], "humidity": s.get("humidity")}
-            log.info(f"    {label}: [{dev}] {s['temp']}°C → 外気温")
+            # 画面上のデバイス名(dev)は"IBS-M2"等の型番で意味が無いため、
+            # どのハブ機器（湯畑/大浴場等）で見つかったかを実機名として使う。
+            gateway = {"temp": s["temp"], "humidity": s.get("humidity"), "name": device_name}
+            log.info(f"    {label}: [{dev}] {s['temp']}°C → 外気温（{device_name}）")
         elif dev and dev not in collected:
             collected[dev] = s
             log.info(f"    {label}: [{dev}] {s['temp']}°C" +
                      (f" / {s['humidity']}%" if s.get("humidity") is not None else ""))
 
     if single_sensor:
-        # 単体センサー機器: タブ探索・タップは一切行わず初期画面だけ読む
-        log.info(f"  単体センサー機器のためタブ操作なし")
-        read_current("初期画面")
+        # 単体センサー機器（タブなし）: タブ探索・タップは一切行わず初期画面だけ読む
+        log.info(f"  タブなし＝単体センサー機器と判定（タブ操作なし）")
+        read_current("初期画面", root_override=root)
     else:
-        root = dump_ui(cfg)
-        tabs = find_sensor_tabs(root) if root is not None else []
         log.info(f"  検出タブ数: {len(tabs)} {tabs}")
         read_current("初期画面", root_override=root)
         for i, (x, y) in enumerate(tabs):
@@ -449,10 +488,15 @@ def collect_all_temperatures(cfg: dict) -> dict:
     """
     config の adb.devices リストに定義された全Inkbirdデバイスを順に巡回して
     センサー温度を収集する。
-    devices が未定義の場合は ui.device_name の1台のみ取得（後方互換）。
+    devices が未設定/空の場合は discover_devices() でホーム画面を自動スキャンし、
+    今ペアリングされている全デバイスを検出する（＝新しいセンサーを追加しても
+    config編集不要で次回サイクルから拾える）。
     戻り値: {"sensors": {センサー名: {temp,humidity}}, "gateway": {temp,humidity}|None}
     """
-    devices = cfg["adb"].get("devices") or [cfg["adb"]["ui"].get("device_name", "湯畑")]
+    devices = cfg["adb"].get("devices")
+    if not devices:
+        devices = discover_devices(cfg)
+        log.info(f"=== ホーム画面から自動検出したデバイス: {devices} ===")
     all_sensors: dict = {}
     all_gateway: dict | None = None
 
@@ -523,11 +567,11 @@ def update_temps(sensors: dict, gateway: dict | None = None) -> int:
         temps[name] = {**p, "stale": True}
 
     if gateway is not None:
-        temps["gateway"] = {"temp": gateway.get("temp"),
+        temps["gateway"] = {"temp": gateway.get("temp"), "name": gateway.get("name"),
                             "humidity": gateway.get("humidity"), "stale": False, "at": now}
     else:
         pg = prev.get("gateway") if isinstance(prev.get("gateway"), dict) else {}
-        temps["gateway"] = {"temp": pg.get("temp"),
+        temps["gateway"] = {"temp": pg.get("temp"), "name": pg.get("name"),
                             "humidity": pg.get("humidity"), "stale": True, "at": pg.get("at")}
     temps["last_updated"] = now
     temps["last_attempt"] = now
